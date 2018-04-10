@@ -30,26 +30,26 @@ Framework for Robot Construction Game: http://ieeexplore.ieee.org/stamp/stamp.js
 
 Design: How will your program fit together? Make a simple free-body diagram illustrating the pieces.
 
-User specifies inputs via GUI, generate button to start the process
-“Creature” class with array fields for different body parts
-Arms, Legs, eyes, details, etc arrays
-Body part types have their own classes containing all information needed to render that body part
-All body parts have a transformation
-Arms and legs have joint arrays
-Eyes might have a “color” field
-Raymarcher reads from body parts and generates the implicit geometry
-Textures determined by world space surface normal, position, designation of parts, etc
+* User specifies inputs via GUI, generate button to start the process
+* “Creature” class with array fields for different body parts
+* Arms, Legs, eyes, details, etc arrays
+* Body part types have their own classes containing all information needed to render that body part
+* All body parts have a transformation
+* Arms and legs have joint arrays
+* Eyes might have a “color” field
+* Raymarcher reads from body parts and generates the implicit geometry
+* Textures determined by world space surface normal, position, designation of parts, etc
 
 Timeline: Create a week-by-week set of milestones for each person in your group. Make sure you explicitly outline what each group member's duties will be.
 
-Week 1 - metaball spine
-Nick - rendering
-Josh - construction
-Week 2 - limb class and rendering
-Nick - construction
-Josh - rendering
-Week  3 - Placement algorithm - collision avoidance?
-Nick - user input, interaction
-Josh - randomization
+> Week 1 - metaball spine
+- Nick - rendering
+- Josh - construction
+> Week 2 - limb class and rendering
+- Nick - construction
+- Josh - rendering
+> Week  3 - Placement algorithm - collision avoidance?
+- Nick - user input, interaction
+- Josh - randomization
 
 
