@@ -4,11 +4,12 @@ class Creature {
   spine: Spine;
 
   constructor() {
+    this.spine = new Spine();
     
   }
 
   generate() {
-
+    this.spine.generate();
   }
 };
 

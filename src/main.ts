@@ -5,6 +5,7 @@ import Square from './geometry/Square';
 import Camera from './Camera';
 import {setGL} from './globals';
 import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
+import Creature from './bodyParts/Creature';
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
@@ -14,6 +15,7 @@ const controls = {
 
 let screenQuad: Square;
 let time : number = 0;
+let creature : Creature = new Creature();
 
 function main() {
   // Initial display for framerate
@@ -57,6 +59,7 @@ function main() {
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/raymarch-frag.glsl')),
   ]);
 
+  creature.generate(); // Pass in parameters for whole creature in GUI
   // This function will be called every frame
   function tick() {
     camera.update();
@@ -67,12 +70,8 @@ function main() {
 
     // TODO: get / calculate relevant uniforms to send to shader here
     // TODO: send uniforms to shader
-    raymarchShader.setSpineLocations([
-      0., 0.1 * Math.sin(0.2 * time + 0.5), 0.,
-      0.3, 0.1 * Math.sin(0.2 * time + 1), 0.,
-      0.6, 0.1 * Math.sin(0.2 * time + 1.5), 0.,
-      0.9, 0.1 * Math.sin(0.2 * time + 2), 0.
-    ]);
+
+    raymarchShader.setSpineLocations(creature.spine.metaBallPos);
     
     raymarchShader.setResolution(vec2.fromValues(window.innerWidth, window.innerHeight));
     raymarchShader.setTime(time);
