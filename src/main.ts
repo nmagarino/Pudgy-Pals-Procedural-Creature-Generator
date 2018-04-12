@@ -71,7 +71,10 @@ function main() {
     // TODO: get / calculate relevant uniforms to send to shader here
     // TODO: send uniforms to shader
 
+    creature.animate(time);
+
     raymarchShader.setSpineLocations(creature.spine.metaBallPos);
+    raymarchShader.setSpineRadii(creature.spine.metaBallRadii);
     
     raymarchShader.setResolution(vec2.fromValues(window.innerWidth, window.innerHeight));
     raymarchShader.setTime(time);

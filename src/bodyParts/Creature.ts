@@ -1,4 +1,4 @@
-import Spine from 'Spine';
+import Spine from './Spine';
 
 class Creature {
   spine: Spine;
@@ -10,6 +10,10 @@ class Creature {
 
   generate() {
     this.spine.generate();
+  }
+
+  animate(time: number) {
+    this.spine.animate(time);
   }
 };
 
