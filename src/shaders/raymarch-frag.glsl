@@ -8,7 +8,7 @@ out vec4 out_Col;
 uniform vec2 u_Resolution;
 uniform float u_Time;
 
-uniform float u_SpineLoc[36];
+uniform float u_SpineLoc[24];
 uniform float u_SpineRad[8];
 
 const int MAX_STEPS = 300;
@@ -149,9 +149,10 @@ float sphereSDF(vec3 p, float r) {
 
 float spineSDF(vec3 p) {
 	float spine = MAX_DIST;
-	for (int i = 0; i < 24; i += 3) {
+	for (int i = 0; i < u_SpineLoc.length(); i += 3) {
+		if (u_SpineLoc[i] == 0. && u_SpineLoc[i+1] == 0. && u_SpineLoc[i+2] == 0.) continue;
 		vec3 pTemp = p + vec3(u_SpineLoc[i], u_SpineLoc[i+1], u_SpineLoc[i+2]);
-		spine = smin(spine, sphereSDF(pTemp, u_SpineRad[i]), 0.1);
+		spine = smin(spine, sphereSDF(pTemp, u_SpineRad[i/3]), 0.1);
 	}
 	return spine;
 }
