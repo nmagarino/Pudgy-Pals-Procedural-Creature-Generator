@@ -1,4 +1,4 @@
-import {vec2, vec4, mat4} from 'gl-matrix';
+import {vec2, vec3, vec4, mat4} from 'gl-matrix';
 import Drawable from './Drawable';
 import {gl} from '../../globals';
 
@@ -29,6 +29,8 @@ class ShaderProgram {
 
   unifTime: WebGLUniformLocation;
 
+  unifSpineLocations: WebGLUniformLocation;
+
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
 
@@ -47,6 +49,7 @@ class ShaderProgram {
     this.unifView   = gl.getUniformLocation(this.prog, "u_View");
     this.unifResolution = gl.getUniformLocation(this.prog, "u_Resolution");
     this.unifTime       = gl.getUniformLocation(this.prog, "u_Time");
+    this.unifSpineLocations = gl.getUniformLocation(this.prog, "u_SpineLoc");
   }
 
   use() {
@@ -67,6 +70,13 @@ class ShaderProgram {
     this.use();
     if(this.unifTime !== -1) {
       gl.uniform1f(this.unifTime, t);
+    }
+  }
+
+  setSpineLocations(locations : number[]) {
+    this.use();
+    if(this.unifSpineLocations !== -1) {
+      gl.uniform1fv(this.unifSpineLocations, locations);
     }
   }
 

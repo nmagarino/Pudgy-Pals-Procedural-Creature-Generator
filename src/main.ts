@@ -67,6 +67,12 @@ function main() {
 
     // TODO: get / calculate relevant uniforms to send to shader here
     // TODO: send uniforms to shader
+    raymarchShader.setSpineLocations([
+      0., 0.1 * Math.sin(0.2 * time + 0.5), 0.,
+      0.3, 0.1 * Math.sin(0.2 * time + 1), 0.,
+      0.6, 0.1 * Math.sin(0.2 * time + 1.5), 0.,
+      0.9, 0.1 * Math.sin(0.2 * time + 2), 0.
+    ]);
     
     raymarchShader.setResolution(vec2.fromValues(window.innerWidth, window.innerHeight));
     raymarchShader.setTime(time);

@@ -8,6 +8,8 @@ out vec4 out_Col;
 uniform vec2 u_Resolution;
 uniform float u_Time;
 
+uniform float u_SpineLoc[12];
+
 const int MAX_STEPS = 300;
 const float MIN_DIST = 0.0001;
 const float MAX_DIST = 100.0;
@@ -40,9 +42,10 @@ mat3 rotateMatZ(float angle) {
 	);
 }
 
-float smin( float a, float b, float k ) {
-    float res = exp( -k*a ) + exp( -k*b );
-    return -log( res )/k;
+float smin( float a, float b, float k )
+{
+    float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
+    return mix( b, a, h ) - k*h*(1.0-h);
 }
 
 float sphereSDF(vec3 p, float r) {
@@ -143,12 +146,20 @@ float sphereSDF(vec3 p, float r) {
 // }
 //~~~~~~~~~~~~~~~~~~~~~~~~~CODE FROM ROBOT CONSTRUCTION (SDF REFERENCE)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
+float spineSDF(vec3 p) {
+	float spine = MAX_DIST;
+	for (int i = 0; i < u_SpineLoc.length(); i += 3) {
+		vec3 pTemp = p + vec3(u_SpineLoc[i], u_SpineLoc[i+1], u_SpineLoc[i+2]);
+		spine = smin(spine, sphereSDF(pTemp, 0.2), 0.1);
+	}
+	return spine;
+}
 
 // OVERALL SCENE SDF -- rotates about z-axis (turn-table style)
 float sceneSDF(vec3 p) {
-	return sphereSDF(p * rotateMatZ(u_Time), .2);
+	// return sphereSDF(p * rotateMatZ(u_Time), .2);
+	return spineSDF(p);
 }
-
 
 //~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 float march(vec3 rayOrigin, vec3 direction) {
