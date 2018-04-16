@@ -20,6 +20,7 @@ class Spine {
 
     let radius = ((this.maxSpineRadius - this.minSpineRadius) * Math.pow(Math.random(), 1.2) + this.minSpineRadius);  //pow to bias smaller radii
     for (let i = 0; i < numMetaBalls; i++) {
+      // radius = 0.2;
       this.metaBallRadii.push(radius);
       radius += 0.1 * (2 * Math.pow(Math.random(), 1.2) - 1); //pow to bias shrinking over length
       if (radius < this.minSpineRadius) radius = this.minSpineRadius;
@@ -27,7 +28,7 @@ class Spine {
     }
     
     this.randomizeSpline();
-    this.metaBallPos;
+    let positions: vec3[] = [];
     let t = 0;
     for (let j = 0; j < numMetaBalls; j++) {
       let radius = this.metaBallRadii[j]/0.4;
@@ -42,9 +43,21 @@ class Spine {
       pos[1] += slope[0];
 
       if (pos[0] == 0 && pos[1] == 0 && pos[2] == 0) pos[0] += 0.01;
-      this.metaBallPos.push(pos[0]);
-      this.metaBallPos.push(pos[1]);
-      this.metaBallPos.push(pos[2]);
+      positions.push(pos);
+    }
+
+    for (let j = 1; j < numMetaBalls; j++) {
+      let diff = vec3.create();
+      vec3.subtract(diff, positions[j - 1], positions[j]);
+      let dist = vec3.length(diff);
+      vec3.normalize(diff, diff);
+      vec3.add(positions[j], positions[j], vec3.scale(diff, diff, Math.max(dist - (this.metaBallRadii[j - 1]/2 + this.metaBallRadii[j]/2), 0)));
+    }
+
+    for (let j = 0; j < numMetaBalls; j++) {
+      this.metaBallPos.push(positions[j][0]);
+      this.metaBallPos.push(positions[j][1]);
+      this.metaBallPos.push(positions[j][2]);
     }
   }
 
