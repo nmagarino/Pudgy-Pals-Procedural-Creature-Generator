@@ -1,5 +1,9 @@
 # CIS-566 Final Project
 
+# Midpoint Milestone
+
+h
+
 # Design Doc
 
 Group Members: Josh Nadel and Nicholas Magarino
