@@ -43,11 +43,11 @@ Design: How will your program fit together? Make a simple free-body diagram illu
 Timeline: Create a week-by-week set of milestones for each person in your group. Make sure you explicitly outline what each group member's duties will be.
 
 > Week 1 - metaball spine
-- Nick - rendering
-- Josh - construction
+- Nick - spline implementation and rendering
+- Josh - creature framwork & spline implementation
 > Week 2 - limb class and rendering
-- Nick - construction
-- Josh - rendering
+- Nick - head class, limb rendering
+- Josh - limb class construction and camera controls
 > Week  3 - Placement algorithm - collision avoidance?
 - Nick - user input, interaction
 - Josh - randomization
