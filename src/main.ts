@@ -75,6 +75,7 @@ function main() {
 
     raymarchShader.setSpineLocations(creature.spine.metaBallPos);
     raymarchShader.setSpineRadii(creature.spine.metaBallRadii);
+    raymarchShader.setHead(creature.head.headData);
     
     raymarchShader.setResolution(vec2.fromValues(window.innerWidth, window.innerHeight));
     raymarchShader.setTime(time);

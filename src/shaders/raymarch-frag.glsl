@@ -11,10 +11,14 @@ uniform float u_Time;
 uniform float u_SpineLoc[24];
 uniform float u_SpineRad[8];
 
+uniform float u_Head[4]; // indices 0-2 are positions, 3 is radius
+
 const int MAX_STEPS = 300;
 const float MIN_DIST = 0.0001;
 const float MAX_DIST = 100.0;
 const float EPSILON = 0.0001;
+
+
 
 mat3 rotateMatX(float angle) {
 	float rad = radians(angle);
@@ -43,6 +47,14 @@ mat3 rotateMatZ(float angle) {
 	);
 }
 
+mat3 scaleMat(float amt) {
+	return mat3(
+		vec3(amt, 0.0, 0.0),
+		vec3(0.0, amt, 0.0),
+		vec3(0.0, 0.0, amt)
+	);
+}
+
 float smin( float a, float b, float k )
 {
     float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
@@ -51,6 +63,18 @@ float smin( float a, float b, float k )
 
 float sphereSDF(vec3 p, float r) {
 		return length(p) - r;
+}
+
+float cubeSDF( vec3 p, float r) {
+     vec3 d = abs(p) - vec3(r, r, r);   
+     float insideDistance = min(max(d.x, max(d.y, d.z)), 0.0);
+     float outsideDistance = length(max(d, 0.0));  
+     return insideDistance + outsideDistance;
+ }
+
+ float sdCappedCylinder( vec3 p, vec2 h ) {
+  vec2 d = abs(vec2(length(p.xz),p.y)) - h;
+  return min(max(d.x,d.y),0.0) + length(max(d,0.0));
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~CODE FROM ROBOT CONSTRUCTION (SDF REFERENCE)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
@@ -146,6 +170,16 @@ float sphereSDF(vec3 p, float r) {
 // 	return min(min(part1, part2), pelvisSDF(pEdit)) * .15;
 // }
 //~~~~~~~~~~~~~~~~~~~~~~~~~CODE FROM ROBOT CONSTRUCTION (SDF REFERENCE)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+float bugHeadSDF(vec3 p) {
+	p = p * rotateMatY(-90.0);
+	float base = sphereSDF(p, u_Head[3]);
+ 	float eyes = min(sphereSDF(p + u_Head[3] * vec3(0.55,-0.35,-.71), u_Head[3] * .2), sphereSDF(p + u_Head[3] * vec3(-0.55,-0.35,-.71), u_Head[3] * .2));
+	float mandibleBase = sdCappedCylinder(p + u_Head[3] * vec3(0.0,0.001,-.9), u_Head[3] * vec2(1.2, 0.1));
+	float mandibles = max(mandibleBase, -sphereSDF(p + u_Head[3] * vec3(0.0,0.0,-0.60), .7 * u_Head[3]));
+	mandibles = max(mandibles, -sphereSDF(p + u_Head[3] * vec3(0.0,0.0,-1.70), .7 * u_Head[3]));
+	float head = smin(min(base, eyes), mandibles, .05);
+	return head;
+}
 
 float spineSDF(vec3 p) {
 	float spine = MAX_DIST;
@@ -158,10 +192,10 @@ float spineSDF(vec3 p) {
 }
 
 // OVERALL SCENE SDF -- rotates about z-axis (turn-table style)
-float sceneSDF(vec3 p) {
-	// return sphereSDF(p * rotateMatZ(u_Time), .2);
+float sceneSDF(vec3 p) {	
 	p += vec3(-1., 0, 0);
-	return spineSDF(p);
+	p = p * rotateMatY(u_Time) * rotateMatX(u_Time / 10.0); // rotates creature
+	return smin(spineSDF(p), bugHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2])), 0.08);
 }
 
 //~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//

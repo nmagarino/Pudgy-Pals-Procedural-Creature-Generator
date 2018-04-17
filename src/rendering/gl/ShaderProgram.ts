@@ -32,6 +32,8 @@ class ShaderProgram {
   unifSpineLocations: WebGLUniformLocation;
   unifSpineRadii: WebGLUniformLocation;
 
+  unifHead: WebGLUniformLocation;
+
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
 
@@ -52,6 +54,7 @@ class ShaderProgram {
     this.unifTime       = gl.getUniformLocation(this.prog, "u_Time");
     this.unifSpineLocations = gl.getUniformLocation(this.prog, "u_SpineLoc");
     this.unifSpineRadii = gl.getUniformLocation(this.prog, "u_SpineRad");
+    this.unifHead = gl.getUniformLocation(this.prog, "u_Head");
   }
 
   use() {
@@ -75,6 +78,8 @@ class ShaderProgram {
     }
   }
 
+  // These are all float arrays that contain creature information
+
   setSpineLocations(locations : number[]) {
     this.use();
     if(this.unifSpineLocations !== -1) {
@@ -86,6 +91,13 @@ class ShaderProgram {
     this.use();
     if(this.unifSpineRadii !== -1) {
       gl.uniform1fv(this.unifSpineRadii, locations);
+    }
+  }
+
+  setHead(locations : number[]) {
+    this.use();
+    if(this.unifHead !== -1) {
+      gl.uniform1fv(this.unifHead, locations);
     }
   }
 
