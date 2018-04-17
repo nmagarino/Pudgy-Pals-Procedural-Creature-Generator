@@ -31,7 +31,9 @@ class ShaderProgram {
 
   unifSpineLocations: WebGLUniformLocation;
   unifSpineRadii: WebGLUniformLocation;
-
+  unifLimbJointLocations: WebGLUniformLocation;
+  unifLimbJointRadii: WebGLUniformLocation;
+  unifLimbJointIDs: WebGLUniformLocation;
   unifHead: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
@@ -55,6 +57,9 @@ class ShaderProgram {
     this.unifSpineLocations = gl.getUniformLocation(this.prog, "u_SpineLoc");
     this.unifSpineRadii = gl.getUniformLocation(this.prog, "u_SpineRad");
     this.unifHead = gl.getUniformLocation(this.prog, "u_Head");
+    this.unifLimbJointIDs = gl.getUniformLocation(this.prog, "u_JointID");
+    this.unifLimbJointLocations = gl.getUniformLocation(this.prog, "u_JointLoc");
+    this.unifLimbJointRadii = gl.getUniformLocation(this.prog, "u_JointRad");
   }
 
   use() {
@@ -87,17 +92,38 @@ class ShaderProgram {
     }
   }
 
-  setSpineRadii(locations : number[]) {
+  setSpineRadii(radii : number[]) {
     this.use();
     if(this.unifSpineRadii !== -1) {
-      gl.uniform1fv(this.unifSpineRadii, locations);
+      gl.uniform1fv(this.unifSpineRadii, radii);
     }
   }
 
-  setHead(locations : number[]) {
+  setHead(properties : number[]) {
     this.use();
     if(this.unifHead !== -1) {
-      gl.uniform1fv(this.unifHead, locations);
+      gl.uniform1fv(this.unifHead, properties);
+    }
+  }
+
+  setJointLocations(locations : number[]) {
+    this.use();
+    if(this.unifLimbJointLocations !== -1) {
+      gl.uniform1fv(this.unifLimbJointLocations, locations);
+    }
+  }
+
+  setJointRadii(radii : number[]) {
+    this.use();
+    if(this.unifLimbJointRadii !== -1) {
+      gl.uniform1fv(this.unifLimbJointRadii, radii);
+    }
+  }
+
+  setJointIDs(radii : number[]) {
+    this.use();
+    if(this.unifLimbJointIDs !== -1) {
+      gl.uniform1fv(this.unifLimbJointIDs, radii);
     }
   }
 

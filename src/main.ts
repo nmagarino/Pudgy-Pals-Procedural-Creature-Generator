@@ -76,6 +76,36 @@ function main() {
     raymarchShader.setSpineLocations(creature.spine.metaBallPos);
     raymarchShader.setSpineRadii(creature.spine.metaBallRadii);
     raymarchShader.setHead(creature.head.headData);
+    raymarchShader.setJointLocations([
+      0, 0, 0,
+      -0.1, -0.2, 0,
+      0.2, -0.3, 0,
+
+      0.5, 0, 0,
+      0.7, -0.2, 0,
+      0.4, -0.4, 0,
+      0.4, -0.5, 0
+    ]);
+    raymarchShader.setJointIDs([
+      0,
+      0,
+      0,
+
+      1,
+      1,
+      1,
+      1
+    ]);
+    raymarchShader.setJointRadii([
+      0.5,
+      0.3,
+      0.2,
+
+      0.8,
+      0.2,
+      0.5,
+      0.1
+    ]);
     
     raymarchShader.setResolution(vec2.fromValues(window.innerWidth, window.innerHeight));
     raymarchShader.setTime(time);
