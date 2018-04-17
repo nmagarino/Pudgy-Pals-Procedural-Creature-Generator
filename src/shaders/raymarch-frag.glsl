@@ -7,6 +7,11 @@ out vec4 out_Col;
 
 uniform vec2 u_Resolution;
 uniform float u_Time;
+uniform mat4 u_View;
+uniform vec3 u_Eye;
+uniform vec3 u_Up;
+uniform vec3 u_Right;
+uniform vec3 u_Forward;
 
 uniform float u_SpineLoc[24];
 uniform float u_SpineRad[8];
@@ -267,8 +272,8 @@ float spineSDF(vec3 p) {
 
 // OVERALL SCENE SDF -- rotates about z-axis (turn-table style)
 float sceneSDF(vec3 p) {
-	p += vec3(-1., 0, 0);
-	p = p * rotateMatY(u_Time) ; // rotates creature
+	p += vec3(0, 0, 0);
+	// p = p * rotateMatY(u_Time) ; // rotates creature
 
 	if(u_Head[4] == 0.0) {
 		headType = bugHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
@@ -306,6 +311,12 @@ vec3 normal(vec3 p) {
 	return normalize(vec3(gradX, gradY, gradZ));
 }
 
+vec3 rayDirection(float fieldOfView, vec2 size, vec2 fragCoord) {
+    vec2 xy = fragCoord - size / 2.0;
+    float z = size.y / tan(radians(fieldOfView) / 2.0);
+    return normalize(vec3(xy, -z));
+}
+
 mat4 viewMatrix(vec3 eye, vec3 center, vec3 up) {
     vec3 f = normalize(center - eye);
     vec3 s = normalize(cross(f, up));
@@ -319,13 +330,19 @@ mat4 viewMatrix(vec3 eye, vec3 center, vec3 up) {
 } 
 
 void main() {
-	
-	vec4 pos = vec4(fs_Pos.x * (u_Resolution.x / u_Resolution.y),
-	                fs_Pos.y,0.0,0.0);
+	vec3 eye = -u_View[3].xyz;
+	vec3 up = u_View[1].xyz;
+	vec3 forward = u_View[2].xyz;
+	vec3 right = u_View[0].xyz;
 
-    vec3 eye = vec3(0.0, 0.24, 12.0);
-	vec3 dir = normalize(pos.xyz - eye);
-	dir = (viewMatrix(eye, vec3(0.0, 0.0, 0.0), vec3(0.0,1.0,0.0)) * vec4(dir, 0.0)).xyz;
+	vec2 coord = vec2(-fs_Pos.x * u_Resolution.x/u_Resolution.y, -fs_Pos.y);
+	vec3 dest = eye + forward + right * coord[0] + up * coord[1];
+	// vec3 viewDir = rayDirection(20.0, normalize(u_Resolution), coord);
+    
+    // mat4 viewToWorld = u_View;//viewMatrix(eye, vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0));
+    
+    vec3 dir = normalize(eye - dest); //(viewToWorld * vec4(viewDir, 0.0)).xyz;
+	
 	float distance = march(eye, dir);
 
 	if(distance >= MAX_DIST - 2.0 * EPSILON) {
@@ -345,4 +362,6 @@ void main() {
 	 float lightIntensity = diffuseTerm + ambientTerm;
 
 	 out_Col = vec4(vec3(1.0,0.0,0.0) * lightIntensity, 1.0) ;
+
+	//  out_Col = vec4(0.5 * (dir + vec3(1,1,1)), 1.);
 }
