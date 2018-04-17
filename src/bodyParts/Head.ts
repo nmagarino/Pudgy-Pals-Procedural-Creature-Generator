@@ -2,8 +2,7 @@ import {vec2, vec3} from 'gl-matrix';
 
 class Head {
 
-    headData: number[]; // In order, contains head position (x,y,z), and radius
-    type: number; // The preset type of head
+    headData: number[]; // In order, contains head position (x,y,z), radius, then type
 
   constructor() {
   }
@@ -37,6 +36,13 @@ class Head {
     console.log(avg);
 
     this.headData.push(avg);
+
+    if(Math.random() < .5) {
+        this.headData.push(0.0);
+    }
+    else {
+        this.headData.push(1.0);
+    }
   }
 
 

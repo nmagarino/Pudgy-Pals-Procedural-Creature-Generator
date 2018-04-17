@@ -11,12 +11,14 @@ uniform float u_Time;
 uniform float u_SpineLoc[24];
 uniform float u_SpineRad[8];
 
-uniform float u_Head[4]; // indices 0-2 are positions, 3 is radius
+uniform float u_Head[5]; // indices 0-2 are positions, 3 is radius
+
+float headType;
 
 const int MAX_STEPS = 300;
 const float MIN_DIST = 0.0001;
 const float MAX_DIST = 100.0;
-const float EPSILON = 0.0001;
+const float EPSILON = 0.002;
 
 
 
@@ -75,6 +77,26 @@ float cubeSDF( vec3 p, float r) {
  float sdCappedCylinder( vec3 p, vec2 h ) {
   vec2 d = abs(vec2(length(p.xz),p.y)) - h;
   return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+}
+
+float udBox( vec3 p, vec3 b ) {
+  return length(max(abs(p)-b,0.0));
+}
+
+float sdCone( vec3 p, vec2 c ) {
+    // c must be normalized
+    float q = length(p.xy);
+    return dot(c,vec2(q,p.z));
+}
+
+float sdCappedCone( in vec3 p, in vec3 c ) {
+    vec2 q = vec2( length(p.xz), p.y );
+    vec2 v = vec2( c.z*c.y/c.x, -c.z );
+    vec2 w = v - q;
+    vec2 vv = vec2( dot(v,v), v.x*v.x );
+    vec2 qv = vec2( dot(v,w), v.x*w.x );
+    vec2 d = max(qv,0.0)*qv/vv;
+    return sqrt( dot(w,w) - max(d.x,d.y) ) * sign(max(q.y*v.x-q.x*v.y,w.y));
 }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~CODE FROM ROBOT CONSTRUCTION (SDF REFERENCE)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
@@ -181,21 +203,50 @@ float bugHeadSDF(vec3 p) {
 	return head;
 }
 
+float dinoHeadSDF(vec3 p) {
+	p = p * rotateMatY(-90.0);
+	float base = sphereSDF(p, u_Head[3]);
+	float topJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.3,-1.4), u_Head[3] * 1.08);
+	topJaw = max(topJaw, -cubeSDF(p + u_Head[3] * vec3(0.0,1.4,-1.4), u_Head[3] * 1.2));
+	float bottomJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.6,-1.0), u_Head[3] * .7);
+	bottomJaw = max(bottomJaw, -cubeSDF((p + u_Head[3] * vec3(0.0,-.4,-1.7)) * rotateMatX(45.0), u_Head[3] * 1.1));
+	float combine = smin(base, topJaw, .04);
+	combine = smin(combine, bottomJaw, .08);
+
+	float eyes = min(sphereSDF(p + u_Head[3] * vec3(.9,0.0,0.0), u_Head[3] * .3), sphereSDF(p + u_Head[3] * vec3(-0.9,0.0,0.0), u_Head[3] * .3));
+	combine = min(combine, eyes);
+	float brows = min(udBox((p + u_Head[3] * vec3(.85,-0.35,0.0)) * rotateMatX(-20.0), u_Head[3] * vec3(.3,.2,.5)), udBox((p + u_Head[3] * vec3(-0.85,-0.35,0.0)) * rotateMatX(-20.0), u_Head[3] * vec3(.3,.2,.5)));
+	combine = min(combine, brows);
+
+	float teeth = sdCappedCone((p + u_Head[3] * vec3(0.4,0.7,-1.8)) * rotateMatX(180.0), u_Head[3] * vec3(3.0,1.0,1.0));
+	teeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(-0.4,0.7,-1.8)) * rotateMatX(180.0), u_Head[3] * vec3(3.0,1.0,1.0)));
+	teeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(-0.4,0.7,-1.3)) * rotateMatX(180.0), u_Head[3] * vec3(2.7,1.0,1.0)));
+	teeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(0.4,0.7,-1.3)) * rotateMatX(180.0), u_Head[3] * vec3(2.7,1.0,1.0)));
+	combine = min(combine, teeth);
+	return combine;
+}
+
 float spineSDF(vec3 p) {
 	float spine = MAX_DIST;
 	for (int i = 0; i < u_SpineLoc.length(); i += 3) {
 		if (u_SpineLoc[i] == 0. && u_SpineLoc[i+1] == 0. && u_SpineLoc[i+2] == 0.) continue;
 		vec3 pTemp = p + vec3(u_SpineLoc[i], u_SpineLoc[i+1], u_SpineLoc[i+2]);
-		spine = smin(spine, sphereSDF(pTemp, u_SpineRad[i/3]), 0.1);
+		spine = smin(spine, sphereSDF(pTemp, u_SpineRad[i/3]), 0.06);
 	}
 	return spine;
 }
 
 // OVERALL SCENE SDF -- rotates about z-axis (turn-table style)
-float sceneSDF(vec3 p) {	
+float sceneSDF(vec3 p) {
 	p += vec3(-1., 0, 0);
 	p = p * rotateMatY(u_Time) * rotateMatX(u_Time / 10.0); // rotates creature
-	return smin(spineSDF(p), bugHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2])), 0.08);
+	if(u_Head[4] == 0.0) {
+		headType = dinoHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
+	}	
+	else {
+		headType = bugHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
+	}	
+	return smin(spineSDF(p), headType, 0.08);
 }
 
 //~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
