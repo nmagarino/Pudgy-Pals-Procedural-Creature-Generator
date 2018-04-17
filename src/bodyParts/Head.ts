@@ -37,11 +37,15 @@ class Head {
 
     this.headData.push(avg);
 
-    if(Math.random() < .5) {
+    let rand :number = Math.random();
+    if(rand < .33) {
         this.headData.push(0.0);
     }
-    else {
+    else if(rand < .66) {
         this.headData.push(1.0);
+    }
+    else {
+        this.headData.push(2.0);
     }
   }
 

@@ -57,11 +57,23 @@ mat3 scaleMat(float amt) {
 	);
 }
 
-float smin( float a, float b, float k )
-{
+// polynomial smooth min
+float smin( float a, float b, float k ) {
     float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
     return mix( b, a, h ) - k*h*(1.0-h);
 }
+
+float sminExp( float a, float b, float k ) {
+    float res = exp( -k*a ) + exp( -k*b );
+    return -log( res )/k;
+}
+
+float sminPow( float a, float b, float k ) {
+    a = pow( a, k ); b = pow( b, k );
+    return pow( (a*b)/(a+b), 1.0/k );
+} 
+
+
 
 float sphereSDF(vec3 p, float r) {
 		return length(p) - r;
@@ -226,6 +238,23 @@ float dinoHeadSDF(vec3 p) {
 	return combine;
 }
 
+float trollHeadSDF(vec3 p) {
+	p = p * rotateMatY(-270.0);
+	float base = sphereSDF(p, u_Head[3]);
+	float bottomJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.3,.62), u_Head[3] * 1.08);
+	bottomJaw = max(bottomJaw, -cubeSDF(p + u_Head[3] * vec3(0.0,-1.0,.45), u_Head[3] * 1.3));
+	float combine = smin(base, bottomJaw, .04);
+	float teeth = sdCappedCone(p + u_Head[3] * vec3(0.65,-0.7,1.1), u_Head[3] * vec3(4.0,1.0,1.0));
+	teeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(-0.65,-0.7,1.1), u_Head[3] * vec3(4.0,1.0,1.0)));
+	teeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(-0.25,-0.2,1.4), u_Head[3] * vec3(3.4,.5,.5)));
+	teeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(0.25,-0.2,1.4), u_Head[3] * vec3(3.4,.5,.5)));
+	combine = min(combine, teeth);
+	float eyes = min(sphereSDF(p + u_Head[3] * vec3(.3,-0.5,0.7), u_Head[3] * .2), sphereSDF(p + u_Head[3] * vec3(-.3,-0.5,0.7), u_Head[3] * .2));
+	float monobrow = udBox((p + u_Head[3] * vec3(0.0,-0.7,.65)) * rotateMatX(-20.0), u_Head[3] * vec3(.6,.2,.2));
+	combine = min(min(combine, eyes), monobrow);
+	return combine;
+}
+
 float spineSDF(vec3 p) {
 	float spine = MAX_DIST;
 	for (int i = 0; i < u_SpineLoc.length(); i += 3) {
@@ -239,13 +268,17 @@ float spineSDF(vec3 p) {
 // OVERALL SCENE SDF -- rotates about z-axis (turn-table style)
 float sceneSDF(vec3 p) {
 	p += vec3(-1., 0, 0);
-	p = p * rotateMatY(u_Time) * rotateMatX(u_Time / 10.0); // rotates creature
+	p = p * rotateMatY(u_Time) ; // rotates creature
+
 	if(u_Head[4] == 0.0) {
-		headType = dinoHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
-	}	
-	else {
 		headType = bugHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
 	}	
+	else if(u_Head[4] == 1.0){
+		headType = dinoHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
+	}	
+	else if(u_Head[4] == 2.0){
+		headType = trollHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
+	}
 	return smin(spineSDF(p), headType, 0.08);
 }
 
