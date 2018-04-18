@@ -160,9 +160,9 @@ function equals(a, b) {
 /* unused harmony reexport mat3 */
 /* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "a", function() { return __WEBPACK_IMPORTED_MODULE_4__gl_matrix_mat4__; });
 /* unused harmony reexport quat */
-/* unused harmony reexport vec2 */
-/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "b", function() { return __WEBPACK_IMPORTED_MODULE_7__gl_matrix_vec3__; });
-/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "c", function() { return __WEBPACK_IMPORTED_MODULE_8__gl_matrix_vec4__; });
+/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "b", function() { return __WEBPACK_IMPORTED_MODULE_6__gl_matrix_vec2__; });
+/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "c", function() { return __WEBPACK_IMPORTED_MODULE_7__gl_matrix_vec3__; });
+/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "d", function() { return __WEBPACK_IMPORTED_MODULE_8__gl_matrix_vec4__; });
 /**
  * @fileoverview gl-matrix - High performance matrix and vector operations
  * @author Brandon Jones
@@ -2622,7 +2622,7 @@ const forEach = (function() {
 
 module.exports = createFilteredVector
 
-var cubicHermite = __webpack_require__(37)
+var cubicHermite = __webpack_require__(36)
 var bsearch = __webpack_require__(9)
 
 function clamp(lo, hi, x) {
@@ -3303,11 +3303,11 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_stats_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_stats_js__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_dat_gui__ = __webpack_require__(25);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_dat_gui___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_dat_gui__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__geometry_Icosphere__ = __webpack_require__(28);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__rendering_gl_OpenGLRenderer__ = __webpack_require__(30);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__Camera__ = __webpack_require__(31);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__globals__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__ = __webpack_require__(64);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__geometry_Square__ = __webpack_require__(28);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__Camera__ = __webpack_require__(30);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__globals__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__rendering_gl_ShaderProgram__ = __webpack_require__(63);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__bodyParts_Creature__ = __webpack_require__(64);
 
 
 
@@ -3317,15 +3317,11 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 // Define an object with application parameters and button callbacks
-const controls = {
-    tesselations: 5,
-    'Load Scene': loadScene,
-};
-let icosphere;
-function loadScene() {
-    icosphere = new __WEBPACK_IMPORTED_MODULE_3__geometry_Icosphere__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* vec3 */].fromValues(0, 0, 0), 1, controls.tesselations);
-    icosphere.create();
-}
+// This will be referred to by dat.GUI's functions that add GUI elements.
+const controls = {};
+let screenQuad;
+let time = 0;
+let creature = new __WEBPACK_IMPORTED_MODULE_7__bodyParts_Creature__["a" /* default */]();
 function main() {
     // Initial display for framerate
     const stats = __WEBPACK_IMPORTED_MODULE_1_stats_js__();
@@ -3334,48 +3330,89 @@ function main() {
     stats.domElement.style.left = '0px';
     stats.domElement.style.top = '0px';
     document.body.appendChild(stats.domElement);
-    // Add controls to the gui
+    // TODO: add any controls you need to the gui
     const gui = new __WEBPACK_IMPORTED_MODULE_2_dat_gui__["GUI"]();
-    gui.add(controls, 'tesselations', 0, 8).step(1);
-    gui.add(controls, 'Load Scene');
+    // E.G. gui.add(controls, 'tesselations', 0, 8).step(1);
     // get canvas and webgl context
     const canvas = document.getElementById('canvas');
+    function setSize(width, height) {
+        canvas.width = width;
+        canvas.height = height;
+    }
     const gl = canvas.getContext('webgl2');
     if (!gl) {
         alert('WebGL 2 not supported!');
     }
     // `setGL` is a function imported above which sets the value of `gl` in the `globals.ts` module.
     // Later, we can import `gl` from `globals.ts` to access it
-    Object(__WEBPACK_IMPORTED_MODULE_6__globals__["b" /* setGL */])(gl);
-    // Initial call to load scene
-    loadScene();
-    const camera = new __WEBPACK_IMPORTED_MODULE_5__Camera__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* vec3 */].fromValues(0, 0, 5), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* vec3 */].fromValues(0, 0, 0));
-    const renderer = new __WEBPACK_IMPORTED_MODULE_4__rendering_gl_OpenGLRenderer__["a" /* default */](canvas);
-    renderer.setClearColor(0.2, 0.2, 0.2, 1);
-    gl.enable(gl.DEPTH_TEST);
-    const lambert = new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["b" /* default */]([
-        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(65)),
-        new __WEBPACK_IMPORTED_MODULE_7__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(66)),
+    Object(__WEBPACK_IMPORTED_MODULE_5__globals__["b" /* setGL */])(gl);
+    screenQuad = new __WEBPACK_IMPORTED_MODULE_3__geometry_Square__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
+    screenQuad.create();
+    const camera = new __WEBPACK_IMPORTED_MODULE_4__Camera__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 2.01), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 2));
+    camera.controls.translateSpeed = 0;
+    camera.controls.zoomSpeed = 0;
+    gl.clearColor(0.0, 0.0, 0.0, 1);
+    gl.disable(gl.DEPTH_TEST);
+    const raymarchShader = new __WEBPACK_IMPORTED_MODULE_6__rendering_gl_ShaderProgram__["b" /* default */]([
+        new __WEBPACK_IMPORTED_MODULE_6__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(67)),
+        new __WEBPACK_IMPORTED_MODULE_6__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(68)),
     ]);
+    creature.generate(); // Pass in parameters for whole creature in GUI
     // This function will be called every frame
     function tick() {
         camera.update();
         stats.begin();
         gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-        renderer.clear();
-        renderer.render(camera, lambert, [
-            icosphere,
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        // TODO: get / calculate relevant uniforms to send to shader here
+        // TODO: send uniforms to shader
+        creature.animate(time);
+        raymarchShader.setSpineLocations(creature.spine.metaBallPos);
+        raymarchShader.setSpineRadii(creature.spine.metaBallRadii);
+        raymarchShader.setHead(creature.head.headData);
+        raymarchShader.setJointLocations([
+            .3, 0.0, 0.0,
+            -0.1, -0.2, 0.0,
+            0.2, -0.3, 0.0,
+            -.3, 0.0, 0.0,
+            0.1, 0.2, 0.0,
+            -0.2, 0.3, 0.0,
+            -0.2, 0.5, 0.0
         ]);
+        raymarchShader.setJointIDs([
+            3.0, 4.0
+        ]);
+        raymarchShader.setJointRadii([
+            0.1,
+            0.08,
+            0.05,
+            0.1,
+            0.08,
+            0.05,
+            0.01
+        ]);
+        raymarchShader.setJointNumber(7);
+        raymarchShader.setResolution(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* vec2 */].fromValues(window.innerWidth, window.innerHeight));
+        raymarchShader.setTime(time);
+        raymarchShader.setViewMatrix(camera.viewMatrix);
+        // raymarchShader.setEye(camera.controls.eye);
+        // raymarchShader.setUp(camera.direction);
+        // raymarchShader.setRight(vec3.cross(vec3.create(), camera.direction, camera.up));
+        // raymarchShader.setForward(camera.up);
+        // March!
+        raymarchShader.draw(screenQuad);
+        time = time + 1;
+        // TODO: more shaders to layer / process the first one? (either via framebuffers or blending)
         stats.end();
         // Tell the browser to call `tick` again whenever it renders a new frame
         requestAnimationFrame(tick);
     }
     window.addEventListener('resize', function () {
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        setSize(window.innerWidth, window.innerHeight);
         camera.setAspectRatio(window.innerWidth / window.innerHeight);
         camera.updateProjectionMatrix();
     }, false);
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    setSize(window.innerWidth, window.innerHeight);
     camera.setAspectRatio(window.innerWidth / window.innerHeight);
     camera.updateProjectionMatrix();
     // Start the render loop
@@ -6787,40 +6824,41 @@ const setAxes = (function() {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* unused harmony export create */
-/* unused harmony export clone */
-/* unused harmony export fromValues */
-/* unused harmony export copy */
-/* unused harmony export set */
-/* unused harmony export add */
-/* unused harmony export subtract */
-/* unused harmony export multiply */
-/* unused harmony export divide */
-/* unused harmony export ceil */
-/* unused harmony export floor */
-/* unused harmony export min */
-/* unused harmony export max */
-/* unused harmony export round */
-/* unused harmony export scale */
-/* unused harmony export scaleAndAdd */
-/* unused harmony export distance */
-/* unused harmony export squaredDistance */
-/* unused harmony export length */
-/* unused harmony export squaredLength */
-/* unused harmony export negate */
-/* unused harmony export inverse */
-/* unused harmony export normalize */
-/* unused harmony export dot */
-/* unused harmony export cross */
-/* unused harmony export lerp */
-/* unused harmony export random */
-/* unused harmony export transformMat2 */
-/* unused harmony export transformMat2d */
-/* unused harmony export transformMat3 */
-/* unused harmony export transformMat4 */
-/* unused harmony export str */
-/* unused harmony export exactEquals */
-/* unused harmony export equals */
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony export (immutable) */ __webpack_exports__["create"] = create;
+/* harmony export (immutable) */ __webpack_exports__["clone"] = clone;
+/* harmony export (immutable) */ __webpack_exports__["fromValues"] = fromValues;
+/* harmony export (immutable) */ __webpack_exports__["copy"] = copy;
+/* harmony export (immutable) */ __webpack_exports__["set"] = set;
+/* harmony export (immutable) */ __webpack_exports__["add"] = add;
+/* harmony export (immutable) */ __webpack_exports__["subtract"] = subtract;
+/* harmony export (immutable) */ __webpack_exports__["multiply"] = multiply;
+/* harmony export (immutable) */ __webpack_exports__["divide"] = divide;
+/* harmony export (immutable) */ __webpack_exports__["ceil"] = ceil;
+/* harmony export (immutable) */ __webpack_exports__["floor"] = floor;
+/* harmony export (immutable) */ __webpack_exports__["min"] = min;
+/* harmony export (immutable) */ __webpack_exports__["max"] = max;
+/* harmony export (immutable) */ __webpack_exports__["round"] = round;
+/* harmony export (immutable) */ __webpack_exports__["scale"] = scale;
+/* harmony export (immutable) */ __webpack_exports__["scaleAndAdd"] = scaleAndAdd;
+/* harmony export (immutable) */ __webpack_exports__["distance"] = distance;
+/* harmony export (immutable) */ __webpack_exports__["squaredDistance"] = squaredDistance;
+/* harmony export (immutable) */ __webpack_exports__["length"] = length;
+/* harmony export (immutable) */ __webpack_exports__["squaredLength"] = squaredLength;
+/* harmony export (immutable) */ __webpack_exports__["negate"] = negate;
+/* harmony export (immutable) */ __webpack_exports__["inverse"] = inverse;
+/* harmony export (immutable) */ __webpack_exports__["normalize"] = normalize;
+/* harmony export (immutable) */ __webpack_exports__["dot"] = dot;
+/* harmony export (immutable) */ __webpack_exports__["cross"] = cross;
+/* harmony export (immutable) */ __webpack_exports__["lerp"] = lerp;
+/* harmony export (immutable) */ __webpack_exports__["random"] = random;
+/* harmony export (immutable) */ __webpack_exports__["transformMat2"] = transformMat2;
+/* harmony export (immutable) */ __webpack_exports__["transformMat2d"] = transformMat2d;
+/* harmony export (immutable) */ __webpack_exports__["transformMat3"] = transformMat3;
+/* harmony export (immutable) */ __webpack_exports__["transformMat4"] = transformMat4;
+/* harmony export (immutable) */ __webpack_exports__["str"] = str;
+/* harmony export (immutable) */ __webpack_exports__["exactEquals"] = exactEquals;
+/* harmony export (immutable) */ __webpack_exports__["equals"] = equals;
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__common__ = __webpack_require__(0);
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
 
@@ -7329,7 +7367,7 @@ function equals(a, b) {
  * @function
  */
 const len = length;
-/* unused harmony export len */
+/* harmony export (immutable) */ __webpack_exports__["len"] = len;
 
 
 /**
@@ -7337,7 +7375,7 @@ const len = length;
  * @function
  */
 const sub = subtract;
-/* unused harmony export sub */
+/* harmony export (immutable) */ __webpack_exports__["sub"] = sub;
 
 
 /**
@@ -7345,7 +7383,7 @@ const sub = subtract;
  * @function
  */
 const mul = multiply;
-/* unused harmony export mul */
+/* harmony export (immutable) */ __webpack_exports__["mul"] = mul;
 
 
 /**
@@ -7353,7 +7391,7 @@ const mul = multiply;
  * @function
  */
 const div = divide;
-/* unused harmony export div */
+/* harmony export (immutable) */ __webpack_exports__["div"] = div;
 
 
 /**
@@ -7361,7 +7399,7 @@ const div = divide;
  * @function
  */
 const dist = distance;
-/* unused harmony export dist */
+/* harmony export (immutable) */ __webpack_exports__["dist"] = dist;
 
 
 /**
@@ -7369,7 +7407,7 @@ const dist = distance;
  * @function
  */
 const sqrDist = squaredDistance;
-/* unused harmony export sqrDist */
+/* harmony export (immutable) */ __webpack_exports__["sqrDist"] = sqrDist;
 
 
 /**
@@ -7377,7 +7415,7 @@ const sqrDist = squaredDistance;
  * @function
  */
 const sqrLen = squaredLength;
-/* unused harmony export sqrLen */
+/* harmony export (immutable) */ __webpack_exports__["sqrLen"] = sqrLen;
 
 
 /**
@@ -7420,7 +7458,7 @@ const forEach = (function() {
     return a;
   };
 })();
-/* unused harmony export forEach */
+/* harmony export (immutable) */ __webpack_exports__["forEach"] = forEach;
 
 
 
@@ -11879,136 +11917,22 @@ dat.utils.common);
 
 
 
-class Icosphere extends __WEBPACK_IMPORTED_MODULE_1__rendering_gl_Drawable__["a" /* default */] {
-    constructor(center, radius, subdivisions) {
+class Square extends __WEBPACK_IMPORTED_MODULE_1__rendering_gl_Drawable__["a" /* default */] {
+    constructor(center) {
         super(); // Call the constructor of the super class. This is required.
-        this.radius = radius;
-        this.subdivisions = subdivisions;
-        this.center = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec4 */].fromValues(center[0], center[1], center[2], 1);
+        this.center = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(center[0], center[1], center[2], 1);
     }
     create() {
-        const X = 0.525731112119133606;
-        const Z = 0.850650808352039932;
-        const N = 0;
-        let maxIndexCount = 20 * Math.pow(4, this.subdivisions);
-        let maxVertexCount = 10 * Math.pow(4, this.subdivisions) + 2;
-        // Create buffers to back geometry data
-        // Index data will ping pong back and forth between buffer0 and buffer1 during creation
-        // All data will be in buffer0 at the end
-        const buffer0 = new ArrayBuffer(maxIndexCount * 3 * Uint32Array.BYTES_PER_ELEMENT +
-            maxVertexCount * 4 * Float32Array.BYTES_PER_ELEMENT +
-            maxVertexCount * 4 * Float32Array.BYTES_PER_ELEMENT);
-        const buffer1 = new ArrayBuffer(maxIndexCount * 3 * Uint32Array.BYTES_PER_ELEMENT);
-        const buffers = [buffer0, buffer1];
-        let b = 0;
-        const indexByteOffset = 0;
-        const vertexByteOffset = maxIndexCount * 3 * Uint32Array.BYTES_PER_ELEMENT;
-        const normalByteOffset = vertexByteOffset;
-        const positionByteOffset = vertexByteOffset + maxVertexCount * 4 * Float32Array.BYTES_PER_ELEMENT;
-        // Create 3-uint buffer views into the backing buffer to represent triangles
-        // The C++ analogy to this would be something like:
-        // triangles[i] = reinterpret_cast<std::array<unsigned int, 3>*>(&buffer[offset]);
-        let triangles = new Array(20);
-        let nextTriangles = new Array();
-        for (let i = 0; i < 20; ++i) {
-            triangles[i] = new Uint32Array(buffers[b], indexByteOffset + i * 3 * Uint32Array.BYTES_PER_ELEMENT, 3);
-        }
-        // Create 3-float buffer views into the backing buffer to represent positions
-        let vertices = new Array(12);
-        for (let i = 0; i < 12; ++i) {
-            vertices[i] = new Float32Array(buffer0, vertexByteOffset + i * 4 * Float32Array.BYTES_PER_ELEMENT, 4);
-        }
-        // Initialize normals for a 20-sided icosahedron
-        vertices[0].set([-X, N, Z, 0]);
-        vertices[1].set([X, N, Z, 0]);
-        vertices[2].set([-X, N, -Z, 0]);
-        vertices[3].set([X, N, -Z, 0]);
-        vertices[4].set([N, Z, X, 0]);
-        vertices[5].set([N, Z, -X, 0]);
-        vertices[6].set([N, -Z, X, 0]);
-        vertices[7].set([N, -Z, -X, 0]);
-        vertices[8].set([Z, X, N, 0]);
-        vertices[9].set([-Z, X, N, 0]);
-        vertices[10].set([Z, -X, N, 0]);
-        vertices[11].set([-Z, -X, N, 0]);
-        // Initialize indices for a 20-sided icosahedron
-        triangles[0].set([0, 4, 1]);
-        triangles[1].set([0, 9, 4]);
-        triangles[2].set([9, 5, 4]);
-        triangles[3].set([4, 5, 8]);
-        triangles[4].set([4, 8, 1]);
-        triangles[5].set([8, 10, 1]);
-        triangles[6].set([8, 3, 10]);
-        triangles[7].set([5, 3, 8]);
-        triangles[8].set([5, 2, 3]);
-        triangles[9].set([2, 7, 3]);
-        triangles[10].set([7, 10, 3]);
-        triangles[11].set([7, 6, 10]);
-        triangles[12].set([7, 11, 6]);
-        triangles[13].set([11, 0, 6]);
-        triangles[14].set([0, 1, 6]);
-        triangles[15].set([6, 1, 10]);
-        triangles[16].set([9, 0, 11]);
-        triangles[17].set([9, 11, 2]);
-        triangles[18].set([9, 2, 5]);
-        triangles[19].set([7, 2, 11]);
-        // This loop subdivides the icosahedron
-        for (let s = 0; s < this.subdivisions; ++s) {
-            b = 1 - b;
-            nextTriangles.length = triangles.length * 4;
-            let triangleIdx = 0;
-            // edgeMap maps a pair of vertex indices to a vertex index at their midpoint
-            // The function `mid` will get that midpoint vertex if it has already been created
-            // or it will create the vertex and add it to the map
-            let edgeMap = new Map();
-            function mid(v0, v1) {
-                let key = [v0, v1].sort().join('_');
-                if (!edgeMap.has(key)) {
-                    let midpoint = new Float32Array(buffer0, vertexByteOffset + vertices.length * 4 * Float32Array.BYTES_PER_ELEMENT, 4);
-                    __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec4 */].add(midpoint, vertices[v0], vertices[v1]);
-                    __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec4 */].normalize(midpoint, midpoint);
-                    edgeMap.set(key, vertices.length);
-                    vertices.push(midpoint);
-                }
-                return edgeMap.get(key);
-            }
-            for (let t = 0; t < triangles.length; ++t) {
-                let v0 = triangles[t][0];
-                let v1 = triangles[t][1];
-                let v2 = triangles[t][2];
-                let v3 = mid(v0, v1); // Get or create a vertex between these two vertices
-                let v4 = mid(v1, v2);
-                let v5 = mid(v2, v0);
-                let t0 = nextTriangles[triangleIdx] = new Uint32Array(buffers[b], indexByteOffset + (triangleIdx++) * 3 * Uint32Array.BYTES_PER_ELEMENT, 3);
-                let t1 = nextTriangles[triangleIdx] = new Uint32Array(buffers[b], indexByteOffset + (triangleIdx++) * 3 * Uint32Array.BYTES_PER_ELEMENT, 3);
-                let t2 = nextTriangles[triangleIdx] = new Uint32Array(buffers[b], indexByteOffset + (triangleIdx++) * 3 * Uint32Array.BYTES_PER_ELEMENT, 3);
-                let t3 = nextTriangles[triangleIdx] = new Uint32Array(buffers[b], indexByteOffset + (triangleIdx++) * 3 * Uint32Array.BYTES_PER_ELEMENT, 3);
-                let triangleOffset = nextTriangles.length;
-                t0.set([v0, v3, v5]);
-                t1.set([v3, v4, v5]);
-                t2.set([v3, v1, v4]);
-                t3.set([v5, v4, v2]);
-            }
-            // swap buffers
-            let temp = triangles;
-            triangles = nextTriangles;
-            nextTriangles = temp;
-        }
-        if (b === 1) {
-            // if indices did not end up in buffer0, copy them there now
-            let temp0 = new Uint32Array(buffer0, 0, 3 * triangles.length);
-            let temp1 = new Uint32Array(buffer1, 0, 3 * triangles.length);
-            temp0.set(temp1);
-        }
-        // Populate one position for each normal
-        for (let i = 0; i < vertices.length; ++i) {
-            let pos = new Float32Array(buffer0, positionByteOffset + i * 4 * Float32Array.BYTES_PER_ELEMENT, 4);
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec4 */].scaleAndAdd(pos, this.center, vertices[i], this.radius);
-        }
-        this.buffer = buffer0;
-        this.indices = new Uint32Array(this.buffer, indexByteOffset, triangles.length * 3);
-        this.normals = new Float32Array(this.buffer, normalByteOffset, vertices.length * 4);
-        this.positions = new Float32Array(this.buffer, positionByteOffset, vertices.length * 4);
+        this.indices = new Uint32Array([0, 1, 2,
+            0, 2, 3]);
+        this.normals = new Float32Array([0, 0, 1, 0,
+            0, 0, 1, 0,
+            0, 0, 1, 0,
+            0, 0, 1, 0]);
+        this.positions = new Float32Array([-1, -1, 0, 1,
+            1, -1, 0, 1,
+            1, 1, 0, 1,
+            -1, 1, 0, 1]);
         this.generateIdx();
         this.generatePos();
         this.generateNor();
@@ -12019,11 +11943,11 @@ class Icosphere extends __WEBPACK_IMPORTED_MODULE_1__rendering_gl_Drawable__["a"
         __WEBPACK_IMPORTED_MODULE_2__globals__["a" /* gl */].bufferData(__WEBPACK_IMPORTED_MODULE_2__globals__["a" /* gl */].ARRAY_BUFFER, this.normals, __WEBPACK_IMPORTED_MODULE_2__globals__["a" /* gl */].STATIC_DRAW);
         __WEBPACK_IMPORTED_MODULE_2__globals__["a" /* gl */].bindBuffer(__WEBPACK_IMPORTED_MODULE_2__globals__["a" /* gl */].ARRAY_BUFFER, this.bufPos);
         __WEBPACK_IMPORTED_MODULE_2__globals__["a" /* gl */].bufferData(__WEBPACK_IMPORTED_MODULE_2__globals__["a" /* gl */].ARRAY_BUFFER, this.positions, __WEBPACK_IMPORTED_MODULE_2__globals__["a" /* gl */].STATIC_DRAW);
-        console.log(`Created icosphere with ${vertices.length} vertices`);
+        console.log(`Created square`);
     }
 }
 ;
-/* harmony default export */ __webpack_exports__["a"] = (Icosphere);
+/* harmony default export */ __webpack_exports__["a"] = (Square);
 
 
 /***/ }),
@@ -12040,7 +11964,7 @@ class Drawable {
         this.posBound = false;
         this.norBound = false;
     }
-    destory() {
+    destroy() {
         __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].deleteBuffer(this.bufIdx);
         __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].deleteBuffer(this.bufPos);
         __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].deleteBuffer(this.bufNor);
@@ -12091,49 +12015,7 @@ class Drawable {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(2);
-
-
-// In this file, `gl` is accessible because it is imported above
-class OpenGLRenderer {
-    constructor(canvas) {
-        this.canvas = canvas;
-    }
-    setClearColor(r, g, b, a) {
-        __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].clearColor(r, g, b, a);
-    }
-    setSize(width, height) {
-        this.canvas.width = width;
-        this.canvas.height = height;
-    }
-    clear() {
-        __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].clear(__WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].COLOR_BUFFER_BIT | __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].DEPTH_BUFFER_BIT);
-    }
-    render(camera, prog, drawables) {
-        let model = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["a" /* mat4 */].create();
-        let viewProj = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["a" /* mat4 */].create();
-        let color = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec4 */].fromValues(1, 0, 0, 1);
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["a" /* mat4 */].identity(model);
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["a" /* mat4 */].multiply(viewProj, camera.projectionMatrix, camera.viewMatrix);
-        prog.setModelMatrix(model);
-        prog.setViewProjMatrix(viewProj);
-        prog.setGeometryColor(color);
-        for (let drawable of drawables) {
-            prog.draw(drawable);
-        }
-    }
-}
-;
-/* harmony default export */ __webpack_exports__["a"] = (OpenGLRenderer);
-
-
-/***/ }),
-/* 31 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_3d_view_controls__ = __webpack_require__(32);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_3d_view_controls__ = __webpack_require__(31);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_3d_view_controls___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_3d_view_controls__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_gl_matrix__ = __webpack_require__(1);
 
@@ -12142,19 +12024,20 @@ class Camera {
     constructor(position, target) {
         this.projectionMatrix = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["a" /* mat4 */].create();
         this.viewMatrix = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["a" /* mat4 */].create();
-        this.fovy = 45;
+        this.fovy = 45 * 3.1415962 / 180.0;
         this.aspectRatio = 1;
         this.near = 0.1;
-        this.far = 1000;
-        this.position = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["b" /* vec3 */].create();
-        this.direction = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["b" /* vec3 */].create();
-        this.target = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["b" /* vec3 */].create();
-        this.up = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["b" /* vec3 */].create();
+        this.far = 100;
+        this.position = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].create();
+        this.direction = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].create();
+        this.target = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].create();
+        this.up = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].create();
         this.controls = __WEBPACK_IMPORTED_MODULE_0_3d_view_controls__(document.getElementById('canvas'), {
             eye: position,
             center: target,
         });
-        __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["b" /* vec3 */].add(this.target, this.position, this.direction);
+        this.controls.mode = 'turntable';
+        __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].add(this.target, this.position, this.direction);
         __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["a" /* mat4 */].lookAt(this.viewMatrix, this.controls.eye, this.controls.center, this.controls.up);
     }
     setAspectRatio(aspectRatio) {
@@ -12165,7 +12048,7 @@ class Camera {
     }
     update() {
         this.controls.tick();
-        __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["b" /* vec3 */].add(this.target, this.position, this.direction);
+        __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].add(this.target, this.position, this.direction);
         __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["a" /* mat4 */].lookAt(this.viewMatrix, this.controls.eye, this.controls.center, this.controls.up);
     }
 }
@@ -12174,7 +12057,7 @@ class Camera {
 
 
 /***/ }),
-/* 32 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -12182,11 +12065,11 @@ class Camera {
 
 module.exports = createCamera
 
-var now         = __webpack_require__(33)
-var createView  = __webpack_require__(35)
-var mouseChange = __webpack_require__(58)
-var mouseWheel  = __webpack_require__(60)
-var mouseOffset = __webpack_require__(63)
+var now         = __webpack_require__(32)
+var createView  = __webpack_require__(34)
+var mouseChange = __webpack_require__(57)
+var mouseWheel  = __webpack_require__(59)
+var mouseOffset = __webpack_require__(62)
 
 function createCamera(element, options) {
   element = element || document.body
@@ -12408,7 +12291,7 @@ function createCamera(element, options) {
 
 
 /***/ }),
-/* 33 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {module.exports =
@@ -12419,10 +12302,10 @@ function createCamera(element, options) {
     return +new Date
   }
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(34)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(33)))
 
 /***/ }),
-/* 34 */
+/* 33 */
 /***/ (function(module, exports) {
 
 var g;
@@ -12449,7 +12332,7 @@ module.exports = g;
 
 
 /***/ }),
-/* 35 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -12457,9 +12340,9 @@ module.exports = g;
 
 module.exports = createViewController
 
-var createTurntable = __webpack_require__(36)
-var createOrbit     = __webpack_require__(39)
-var createMatrix    = __webpack_require__(42)
+var createTurntable = __webpack_require__(35)
+var createOrbit     = __webpack_require__(38)
+var createMatrix    = __webpack_require__(41)
 
 function ViewController(controllers, mode) {
   this._controllerNames = Object.keys(controllers)
@@ -12577,7 +12460,7 @@ function createViewController(options) {
 }
 
 /***/ }),
-/* 36 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -12587,7 +12470,7 @@ module.exports = createTurntableController
 
 var filterVector = __webpack_require__(8)
 var invert44     = __webpack_require__(3)
-var rotateM      = __webpack_require__(38)
+var rotateM      = __webpack_require__(37)
 var cross        = __webpack_require__(10)
 var normalize3   = __webpack_require__(4)
 var dot3         = __webpack_require__(11)
@@ -13155,7 +13038,7 @@ function createTurntableController(options) {
 }
 
 /***/ }),
-/* 37 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -13200,7 +13083,7 @@ module.exports = cubicHermite
 module.exports.derivative = dcubicHermite
 
 /***/ }),
-/* 38 */
+/* 37 */
 /***/ (function(module, exports) {
 
 module.exports = rotate;
@@ -13269,7 +13152,7 @@ function rotate(out, a, rad, axis) {
 };
 
 /***/ }),
-/* 39 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -13279,9 +13162,9 @@ module.exports = createOrbitController
 
 var filterVector  = __webpack_require__(8)
 var lookAt        = __webpack_require__(12)
-var mat4FromQuat  = __webpack_require__(40)
+var mat4FromQuat  = __webpack_require__(39)
 var invert44      = __webpack_require__(3)
-var quatFromFrame = __webpack_require__(41)
+var quatFromFrame = __webpack_require__(40)
 
 function len3(x,y,z) {
   return Math.sqrt(Math.pow(x,2) + Math.pow(y,2) + Math.pow(z,2))
@@ -13668,7 +13551,7 @@ function createOrbitController(options) {
 }
 
 /***/ }),
-/* 40 */
+/* 39 */
 /***/ (function(module, exports) {
 
 module.exports = fromQuat;
@@ -13720,7 +13603,7 @@ function fromQuat(out, q) {
 };
 
 /***/ }),
-/* 41 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -13767,18 +13650,18 @@ function quatFromFrame(
 }
 
 /***/ }),
-/* 42 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var bsearch   = __webpack_require__(9)
-var m4interp  = __webpack_require__(43)
+var m4interp  = __webpack_require__(42)
 var invert44  = __webpack_require__(3)
-var rotateX   = __webpack_require__(55)
-var rotateY   = __webpack_require__(56)
-var rotateZ   = __webpack_require__(57)
+var rotateX   = __webpack_require__(54)
+var rotateY   = __webpack_require__(55)
+var rotateZ   = __webpack_require__(56)
 var lookAt    = __webpack_require__(12)
 var translate = __webpack_require__(14)
 var scale     = __webpack_require__(16)
@@ -13972,15 +13855,15 @@ function createMatrixCameraController(options) {
 
 
 /***/ }),
-/* 43 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var lerp = __webpack_require__(44)
+var lerp = __webpack_require__(43)
 
-var recompose = __webpack_require__(45)
-var decompose = __webpack_require__(48)
+var recompose = __webpack_require__(44)
+var decompose = __webpack_require__(47)
 var determinant = __webpack_require__(17)
-var slerp = __webpack_require__(53)
+var slerp = __webpack_require__(52)
 
 var state0 = state()
 var state1 = state()
@@ -14029,7 +13912,7 @@ function vec4() {
 }
 
 /***/ }),
-/* 44 */
+/* 43 */
 /***/ (function(module, exports) {
 
 module.exports = lerp;
@@ -14054,7 +13937,7 @@ function lerp(out, a, b, t) {
 }
 
 /***/ }),
-/* 45 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -14071,10 +13954,10 @@ From: http://www.w3.org/TR/css3-transforms/#recomposing-to-a-3d-matrix
 var mat4 = {
     identity: __webpack_require__(13),
     translate: __webpack_require__(14),
-    multiply: __webpack_require__(46),
+    multiply: __webpack_require__(45),
     create: __webpack_require__(15),
     scale: __webpack_require__(16),
-    fromRotationTranslation: __webpack_require__(47)
+    fromRotationTranslation: __webpack_require__(46)
 }
 
 var rotationMatrix = mat4.create()
@@ -14119,7 +14002,7 @@ module.exports = function recomposeMat4(matrix, translation, scale, skew, perspe
 }
 
 /***/ }),
-/* 46 */
+/* 45 */
 /***/ (function(module, exports) {
 
 module.exports = multiply;
@@ -14166,7 +14049,7 @@ function multiply(out, a, b) {
 };
 
 /***/ }),
-/* 47 */
+/* 46 */
 /***/ (function(module, exports) {
 
 module.exports = fromRotationTranslation;
@@ -14224,7 +14107,7 @@ function fromRotationTranslation(out, q, v) {
 };
 
 /***/ }),
-/* 48 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*jshint unused:true*/
@@ -14244,15 +14127,15 @@ https://github.com/ChromiumWebApps/chromium/blob/master/ui/gfx/transform_util.cc
 http://www.w3.org/TR/css3-transforms/#decomposing-a-3d-matrix
 */
 
-var normalize = __webpack_require__(49)
+var normalize = __webpack_require__(48)
 
 var create = __webpack_require__(15)
-var clone = __webpack_require__(50)
+var clone = __webpack_require__(49)
 var determinant = __webpack_require__(17)
 var invert = __webpack_require__(3)
-var transpose = __webpack_require__(51)
+var transpose = __webpack_require__(50)
 var vec3 = {
-    length: __webpack_require__(52),
+    length: __webpack_require__(51),
     normalize: __webpack_require__(4),
     dot: __webpack_require__(11),
     cross: __webpack_require__(10)
@@ -14408,7 +14291,7 @@ function combine(out, a, b, scale1, scale2) {
 }
 
 /***/ }),
-/* 49 */
+/* 48 */
 /***/ (function(module, exports) {
 
 module.exports = function normalize(out, mat) {
@@ -14423,7 +14306,7 @@ module.exports = function normalize(out, mat) {
 }
 
 /***/ }),
-/* 50 */
+/* 49 */
 /***/ (function(module, exports) {
 
 module.exports = clone;
@@ -14456,7 +14339,7 @@ function clone(a) {
 };
 
 /***/ }),
-/* 51 */
+/* 50 */
 /***/ (function(module, exports) {
 
 module.exports = transpose;
@@ -14510,7 +14393,7 @@ function transpose(out, a) {
 };
 
 /***/ }),
-/* 52 */
+/* 51 */
 /***/ (function(module, exports) {
 
 module.exports = length;
@@ -14529,13 +14412,13 @@ function length(a) {
 }
 
 /***/ }),
-/* 53 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(54)
+module.exports = __webpack_require__(53)
 
 /***/ }),
-/* 54 */
+/* 53 */
 /***/ (function(module, exports) {
 
 module.exports = slerp
@@ -14592,7 +14475,7 @@ function slerp (out, a, b, t) {
 
 
 /***/ }),
-/* 55 */
+/* 54 */
 /***/ (function(module, exports) {
 
 module.exports = rotateX;
@@ -14641,7 +14524,7 @@ function rotateX(out, a, rad) {
 };
 
 /***/ }),
-/* 56 */
+/* 55 */
 /***/ (function(module, exports) {
 
 module.exports = rotateY;
@@ -14690,7 +14573,7 @@ function rotateY(out, a, rad) {
 };
 
 /***/ }),
-/* 57 */
+/* 56 */
 /***/ (function(module, exports) {
 
 module.exports = rotateZ;
@@ -14739,7 +14622,7 @@ function rotateZ(out, a, rad) {
 };
 
 /***/ }),
-/* 58 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -14747,7 +14630,7 @@ function rotateZ(out, a, rad) {
 
 module.exports = mouseListen
 
-var mouse = __webpack_require__(59)
+var mouse = __webpack_require__(58)
 
 function mouseListen (element, callback) {
   if (!callback) {
@@ -14951,7 +14834,7 @@ function mouseListen (element, callback) {
 
 
 /***/ }),
-/* 59 */
+/* 58 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -15018,13 +14901,13 @@ exports.y = mouseRelativeY
 
 
 /***/ }),
-/* 60 */
+/* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var toPX = __webpack_require__(61)
+var toPX = __webpack_require__(60)
 
 module.exports = mouseWheelListen
 
@@ -15065,13 +14948,13 @@ function mouseWheelListen(element, callback, noScroll) {
 
 
 /***/ }),
-/* 61 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var parseUnit = __webpack_require__(62)
+var parseUnit = __webpack_require__(61)
 
 module.exports = toPX
 
@@ -15131,7 +15014,7 @@ function toPX(str, element) {
 }
 
 /***/ }),
-/* 62 */
+/* 61 */
 /***/ (function(module, exports) {
 
 module.exports = function parseUnit(str, out) {
@@ -15146,7 +15029,7 @@ module.exports = function parseUnit(str, out) {
 }
 
 /***/ }),
-/* 63 */
+/* 62 */
 /***/ (function(module, exports) {
 
 var rootPosition = { left: 0, top: 0 }
@@ -15177,22 +15060,20 @@ function getBoundingClientOffset (element) {
 
 
 /***/ }),
-/* 64 */
+/* 63 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(2);
-
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__globals__ = __webpack_require__(2);
 
 var activeProgram = null;
 class Shader {
     constructor(type, source) {
-        this.shader = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].createShader(type);
-        __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].shaderSource(this.shader, source);
-        __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].compileShader(this.shader);
-        if (!__WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getShaderParameter(this.shader, __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].COMPILE_STATUS)) {
-            throw __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getShaderInfoLog(this.shader);
+        this.shader = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].createShader(type);
+        __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].shaderSource(this.shader, source);
+        __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].compileShader(this.shader);
+        if (!__WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getShaderParameter(this.shader, __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].COMPILE_STATUS)) {
+            throw __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getShaderInfoLog(this.shader);
         }
     }
 }
@@ -15201,68 +15082,134 @@ class Shader {
 ;
 class ShaderProgram {
     constructor(shaders) {
-        this.prog = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].createProgram();
+        this.prog = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].createProgram();
         for (let shader of shaders) {
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].attachShader(this.prog, shader.shader);
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].attachShader(this.prog, shader.shader);
         }
-        __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].linkProgram(this.prog);
-        if (!__WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getProgramParameter(this.prog, __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].LINK_STATUS)) {
-            throw __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getProgramInfoLog(this.prog);
+        __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].linkProgram(this.prog);
+        if (!__WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getProgramParameter(this.prog, __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].LINK_STATUS)) {
+            throw __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getProgramInfoLog(this.prog);
         }
-        this.attrPos = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getAttribLocation(this.prog, "vs_Pos");
-        this.attrNor = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getAttribLocation(this.prog, "vs_Nor");
-        this.attrCol = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getAttribLocation(this.prog, "vs_Col");
-        this.unifModel = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Model");
-        this.unifModelInvTr = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getUniformLocation(this.prog, "u_ModelInvTr");
-        this.unifViewProj = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getUniformLocation(this.prog, "u_ViewProj");
-        this.unifColor = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Color");
+        // Raymarcher only draws a quad in screen space! No other attributes
+        this.attrPos = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getAttribLocation(this.prog, "vs_Pos");
+        // TODO: add other attributes here
+        this.unifView = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_View");
+        // this.unifEye   = gl.getUniformLocation(this.prog, "u_Eye");
+        // this.unifForward   = gl.getUniformLocation(this.prog, "u_Forward");
+        // this.unifUp   = gl.getUniformLocation(this.prog, "u_Up");
+        // this.unifRight   = gl.getUniformLocation(this.prog, "u_Right");
+        this.unifResolution = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Resolution");
+        this.unifTime = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Time");
+        this.unifSpineLocations = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_SpineLoc");
+        this.unifSpineRadii = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_SpineRad");
+        this.unifHead = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Head");
+        this.unifLimbJointIDs = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_JointID");
+        this.unifLimbJointLocations = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_JointLoc");
+        this.unifLimbJointRadii = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_JointRad");
+        this.unifJointNumber = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_jointNum");
     }
     use() {
         if (activeProgram !== this.prog) {
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].useProgram(this.prog);
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].useProgram(this.prog);
             activeProgram = this.prog;
         }
     }
-    setModelMatrix(model) {
+    setEye(eye) {
         this.use();
-        if (this.unifModel !== -1) {
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].uniformMatrix4fv(this.unifModel, false, model);
-        }
-        if (this.unifModelInvTr !== -1) {
-            let modelinvtr = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["a" /* mat4 */].create();
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["a" /* mat4 */].transpose(modelinvtr, model);
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["a" /* mat4 */].invert(modelinvtr, modelinvtr);
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].uniformMatrix4fv(this.unifModelInvTr, false, modelinvtr);
+        if (this.unifEye !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifEye, eye);
         }
     }
-    setViewProjMatrix(vp) {
+    setUp(up) {
         this.use();
-        if (this.unifViewProj !== -1) {
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].uniformMatrix4fv(this.unifViewProj, false, vp);
+        if (this.unifUp !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifUp, up);
         }
     }
-    setGeometryColor(color) {
+    setRight(right) {
         this.use();
-        if (this.unifColor !== -1) {
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].uniform4fv(this.unifColor, color);
+        if (this.unifRight !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifRight, right);
         }
     }
+    setForward(forward) {
+        this.use();
+        if (this.unifForward !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifForward, forward);
+        }
+    }
+    setViewMatrix(vp) {
+        this.use();
+        if (this.unifView !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniformMatrix4fv(this.unifView, false, vp);
+        }
+    }
+    setResolution(resolution) {
+        this.use();
+        if (this.unifResolution !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform2fv(this.unifResolution, resolution);
+        }
+    }
+    setTime(t) {
+        this.use();
+        if (this.unifTime !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1f(this.unifTime, t);
+        }
+    }
+    // These are all float arrays that contain creature information
+    setSpineLocations(locations) {
+        this.use();
+        if (this.unifSpineLocations !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1fv(this.unifSpineLocations, locations);
+        }
+    }
+    setSpineRadii(radii) {
+        this.use();
+        if (this.unifSpineRadii !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1fv(this.unifSpineRadii, radii);
+        }
+    }
+    setHead(properties) {
+        this.use();
+        if (this.unifHead !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1fv(this.unifHead, properties);
+        }
+    }
+    setJointLocations(locations) {
+        this.use();
+        if (this.unifLimbJointLocations !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1fv(this.unifLimbJointLocations, locations);
+        }
+    }
+    setJointRadii(radii) {
+        this.use();
+        if (this.unifLimbJointRadii !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1fv(this.unifLimbJointRadii, radii);
+        }
+    }
+    setJointIDs(radii) {
+        this.use();
+        if (this.unifLimbJointIDs !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1fv(this.unifLimbJointIDs, radii);
+        }
+    }
+    setJointNumber(num) {
+        this.use();
+        if (this.unifJointNumber !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1i(this.unifJointNumber, num);
+        }
+    }
+    // TODO: add functions to modify uniforms
     draw(d) {
         this.use();
         if (this.attrPos != -1 && d.bindPos()) {
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].enableVertexAttribArray(this.attrPos);
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].vertexAttribPointer(this.attrPos, 4, __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].FLOAT, false, 0, 0);
-        }
-        if (this.attrNor != -1 && d.bindNor()) {
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].enableVertexAttribArray(this.attrNor);
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].vertexAttribPointer(this.attrNor, 4, __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].FLOAT, false, 0, 0);
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].enableVertexAttribArray(this.attrPos);
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].vertexAttribPointer(this.attrPos, 4, __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].FLOAT, false, 0, 0);
         }
         d.bindIdx();
-        __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].drawElements(d.drawMode(), d.elemCount(), __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].UNSIGNED_INT, 0);
+        __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].drawElements(d.drawMode(), d.elemCount(), __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].UNSIGNED_INT, 0);
         if (this.attrPos != -1)
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].disableVertexAttribArray(this.attrPos);
-        if (this.attrNor != -1)
-            __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].disableVertexAttribArray(this.attrNor);
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].disableVertexAttribArray(this.attrPos);
     }
 }
 ;
@@ -15270,16 +15217,191 @@ class ShaderProgram {
 
 
 /***/ }),
-/* 65 */
-/***/ (function(module, exports) {
+/* 64 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
-module.exports = "#version 300 es\n\n//This is a vertex shader. While it is called a \"shader\" due to outdated conventions, this file\n//is used to apply matrix transformations to the arrays of vertex data passed to it.\n//Since this code is run on your GPU, each vertex is transformed simultaneously.\n//If it were run on your CPU, each vertex would have to be processed in a FOR loop, one at a time.\n//This simultaneous transformation allows your program to run much faster, especially when rendering\n//geometry with millions of vertices.\n\nuniform mat4 u_Model;       // The matrix that defines the transformation of the\n                            // object we're rendering. In this assignment,\n                            // this will be the result of traversing your scene graph.\n\nuniform mat4 u_ModelInvTr;  // The inverse transpose of the model matrix.\n                            // This allows us to transform the object's normals properly\n                            // if the object has been non-uniformly scaled.\n\nuniform mat4 u_ViewProj;    // The matrix that defines the camera's transformation.\n                            // We've written a static matrix for you to use for HW2,\n                            // but in HW3 you'll have to generate one yourself\n\nin vec4 vs_Pos;             // The array of vertex positions passed to the shader\n\nin vec4 vs_Nor;             // The array of vertex normals passed to the shader\n\nin vec4 vs_Col;             // The array of vertex colors passed to the shader.\n\nout vec4 fs_Nor;            // The array of normals that has been transformed by u_ModelInvTr. This is implicitly passed to the fragment shader.\nout vec4 fs_LightVec;       // The direction in which our virtual light lies, relative to each vertex. This is implicitly passed to the fragment shader.\nout vec4 fs_Col;            // The color of each vertex. This is implicitly passed to the fragment shader.\n\nconst vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of\n                                        //the geometry in the fragment shader.\n\nvoid main()\n{\n    fs_Col = vs_Col;                         // Pass the vertex colors to the fragment shader for interpolation\n\n    mat3 invTranspose = mat3(u_ModelInvTr);\n    fs_Nor = vec4(invTranspose * vec3(vs_Nor), 0);          // Pass the vertex normals to the fragment shader for interpolation.\n                                                            // Transform the geometry's normals by the inverse transpose of the\n                                                            // model matrix. This is necessary to ensure the normals remain\n                                                            // perpendicular to the surface after the surface is transformed by\n                                                            // the model matrix.\n\n\n    vec4 modelposition = u_Model * vs_Pos;   // Temporarily store the transformed vertex positions for use below\n\n    fs_LightVec = lightPos - modelposition;  // Compute the direction in which the light source lies\n\n    gl_Position = u_ViewProj * modelposition;// gl_Position is a built-in variable of OpenGL which is\n                                             // used to render the final positions of the geometry's vertices\n}\n"
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Spine__ = __webpack_require__(65);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Head__ = __webpack_require__(66);
+
+
+class Creature {
+    constructor() {
+        this.spine = new __WEBPACK_IMPORTED_MODULE_0__Spine__["a" /* default */]();
+        this.head = new __WEBPACK_IMPORTED_MODULE_1__Head__["a" /* default */]();
+    }
+    generate() {
+        this.spine.generate();
+        // Head takes information from the spine that is made previously
+        this.head.generate(this.spine.metaBallPos, this.spine.metaBallRadii);
+    }
+    animate(time) {
+        this.spine.animate(time);
+        this.head.animate(time);
+    }
+}
+;
+/* harmony default export */ __webpack_exports__["a"] = (Creature);
+
+
+/***/ }),
+/* 65 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(1);
+
+class Spine {
+    constructor() {
+        this.maxSpineRadius = 0.4;
+        this.minSpineRadius = 0.1;
+    }
+    generate() {
+        this.splinePoints = [];
+        this.metaBallPos = [];
+        this.metaBallRadii = [];
+        let numMetaBalls = 12;
+        let radius = ((this.maxSpineRadius - this.minSpineRadius) * Math.pow(Math.random(), 1.2) + this.minSpineRadius); //pow to bias smaller radii
+        for (let i = 0; i < numMetaBalls; i++) {
+            // radius = 0.2;
+            this.metaBallRadii.push(radius);
+            radius += 0.1 * (2 * Math.pow(Math.random(), 1.2) - 1); //pow to bias shrinking over length
+            if (radius < this.minSpineRadius)
+                radius = this.minSpineRadius;
+            if (radius > this.maxSpineRadius)
+                radius = this.maxSpineRadius;
+        }
+        this.randomizeSpline();
+        let positions = [];
+        let t = 0;
+        for (let j = 0; j < numMetaBalls; j++) {
+            let radius = this.metaBallRadii[j] / 0.4;
+            let prevRadius = 0;
+            if (j > 0)
+                prevRadius = this.metaBallRadii[j - 1];
+            t += 1 / numMetaBalls;
+            let pos = this.getPosOnSpline(t);
+            let posNearby = this.getPosOnSpline(t + 0.05);
+            let slope = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create();
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].scale(slope, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].normalize(slope, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].subtract(slope, pos, posNearby)), -1 * this.metaBallRadii[j]);
+            pos[0] += slope[1];
+            pos[1] += slope[0];
+            if (pos[0] == 0 && pos[1] == 0 && pos[2] == 0)
+                pos[0] += 0.01;
+            positions.push(pos);
+        }
+        for (let j = 1; j < numMetaBalls; j++) {
+            let diff = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create();
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].subtract(diff, positions[j - 1], positions[j]);
+            let dist = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].length(diff);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].normalize(diff, diff);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].add(positions[j], positions[j], __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].scale(diff, diff, Math.max(dist - (this.metaBallRadii[j - 1] / 2 + this.metaBallRadii[j] / 2), 0)));
+        }
+        for (let j = 0; j < numMetaBalls; j++) {
+            this.metaBallPos.push(positions[j][0]);
+            this.metaBallPos.push(positions[j][1]);
+            this.metaBallPos.push(positions[j][2]);
+        }
+    }
+    getPosOnSpline(t) {
+        let qs = [];
+        let rs = [];
+        for (let i = 0; i < 3; i++) {
+            let newPoint = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create();
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].subtract(newPoint, this.splinePoints[i + 1], this.splinePoints[i]);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].scale(newPoint, newPoint, t);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].add(newPoint, newPoint, this.splinePoints[i]);
+            qs.push(newPoint);
+        }
+        for (let i = 0; i < 2; i++) {
+            let newPoint = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create();
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].subtract(newPoint, qs[i + 1], qs[i]);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].scale(newPoint, newPoint, t);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].add(newPoint, newPoint, qs[i]);
+            rs.push(newPoint);
+        }
+        let pos = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create();
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].subtract(pos, rs[1], rs[0]);
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].scale(pos, pos, t);
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].add(pos, pos, rs[0]);
+        return pos;
+    }
+    randomizeSpline() {
+        let numSplinePoints = 4;
+        for (let i = 0; i < numSplinePoints; i++) {
+            let newPoint = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0.8 * i + 0.3 * Math.random(), 1. * (2 * Math.random() - 1), 0);
+            this.splinePoints.push(newPoint);
+        }
+    }
+    animate(time) {
+        for (let i = 1; i < this.metaBallPos.length; i += 3) {
+            this.metaBallPos[i] += 0.01 * Math.sin(time * 0.5 + 0.3 * i);
+        }
+    }
+}
+;
+/* harmony default export */ __webpack_exports__["a"] = (Spine);
+
 
 /***/ }),
 /* 66 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+class Head {
+    constructor() {
+    }
+    generate(spinePos, spineRadii) {
+        this.headData = [];
+        let firstPos = [];
+        firstPos.push(spinePos[0]);
+        firstPos.push(spinePos[1]);
+        firstPos.push(spinePos[2]);
+        let firstRadii = spineRadii[0];
+        //let headPos: number[] = [];
+        // new head position is the first metaball position plus the radius to the left (for now)
+        this.headData.push(firstPos[0] - firstRadii);
+        this.headData.push(firstPos[1]);
+        this.headData.push(firstPos[2]);
+        // Find radius of head
+        let sum = 0;
+        let avg = 0;
+        for (let i = 0; i < spineRadii.length; i++) {
+            sum += spineRadii[i];
+        }
+        avg = sum / spineRadii.length;
+        console.log(avg);
+        this.headData.push(avg);
+        let rand = Math.random();
+        if (rand < .33) {
+            this.headData.push(0.0);
+        }
+        else if (rand < .66) {
+            this.headData.push(1.0);
+        }
+        else {
+            this.headData.push(2.0);
+        }
+    }
+    animate(time) {
+        this.headData[1] += 0.01 * Math.sin(time * 0.5 + 0.3 * 1);
+    }
+}
+;
+/* harmony default export */ __webpack_exports__["a"] = (Head);
+
+
+/***/ }),
+/* 67 */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\n\n// This is a fragment shader. If you've opened this file first, please\n// open and read lambert.vert.glsl before reading on.\n// Unlike the vertex shader, the fragment shader actually does compute\n// the shading of geometry. For every pixel in your program's output\n// screen, the fragment shader is run for every bit of geometry that\n// particular pixel overlaps. By implicitly interpolating the position\n// data passed into the fragment shader by the vertex shader, the fragment shader\n// can compute what color to apply to its pixel based on things like vertex\n// position, light position, and vertex color.\nprecision highp float;\n\nuniform vec4 u_Color; // The color with which to render this instance of geometry.\n\n// These are the interpolated values out of the rasterizer, so you can't know\n// their specific values without knowing the vertices that contributed to them\nin vec4 fs_Nor;\nin vec4 fs_LightVec;\nin vec4 fs_Col;\n\nout vec4 out_Col; // This is the final output color that you will see on your\n                  // screen for the pixel that is currently being processed.\n\nvoid main()\n{\n    // Material base color (before shading)\n        vec4 diffuseColor = u_Color;\n\n        // Calculate the diffuse term for Lambert shading\n        float diffuseTerm = dot(normalize(fs_Nor), normalize(fs_LightVec));\n        // Avoid negative lighting values\n        // diffuseTerm = clamp(diffuseTerm, 0, 1);\n\n        float ambientTerm = 0.2;\n\n        float lightIntensity = diffuseTerm + ambientTerm;   //Add a small float value to the color multiplier\n                                                            //to simulate ambient lighting. This ensures that faces that are not\n                                                            //lit by our point light are not completely black.\n\n        // Compute final shaded color\n        out_Col = vec4(diffuseColor.rgb * lightIntensity, diffuseColor.a);\n}\n"
+module.exports = "#version 300 es\r\n\r\nprecision highp float;\r\n\r\nin vec4 vs_Pos;\r\nout vec4 fs_Pos;\r\n\r\nvoid main() {\r\n\t// TODO: Pass relevant info to fragment\r\n\tfs_Pos = vs_Pos;\r\n\tgl_Position = vs_Pos;\r\n}\r\n"
+
+/***/ }),
+/* 68 */
+/***/ (function(module, exports) {
+
+module.exports = "#version 300 es\r\n\r\nprecision highp float;\r\n\r\nin vec4 fs_Pos;\r\nout vec4 out_Col;\r\n\r\nuniform vec2 u_Resolution;\r\nuniform float u_Time;\r\nuniform mat4 u_View;\r\nuniform vec3 u_Eye;\r\nuniform vec3 u_Up;\r\nuniform vec3 u_Right;\r\nuniform vec3 u_Forward;\r\n\r\nuniform float u_SpineLoc[24];\r\nuniform float u_SpineRad[8];\r\n\r\nuniform float u_Head[5]; // indices 0-2 are positions, 3 is radius\r\n\r\nuniform int u_jointNum;\r\n\r\nuniform float u_JointID[4];  //size is number of limbs\r\nuniform float u_JointLoc[50]; //size is  numbe of joints * 3\r\nuniform float u_JointRad[50]; //size is number of joints\r\n//pass in number of joints...\r\n\r\n\r\nfloat headType;\r\n\r\nconst int MAX_STEPS = 300;\r\nconst float MIN_DIST = 0.0001;\r\nconst float MAX_DIST = 100.0;\r\nconst float EPSILON = 0.002;\r\n\r\n\r\n\r\nmat3 rotateMatX(float angle) {\r\n\tfloat rad = radians(angle);\r\n\treturn mat3(\r\n\t\tvec3(1.0, 0.0, 0.0),\r\n\t\tvec3(0.0, cos(rad), -sin(rad)),\r\n\t\tvec3(0.0, sin(rad), cos(rad))\r\n\t);\r\n}\r\n\r\nmat3 rotateMatY(float angle) {\r\n\tfloat rad = radians(angle);\r\n\treturn mat3(\r\n\t\tvec3(cos(rad), 0.0, sin(rad)),\r\n\t\tvec3(0.0, 1.0, 0.0),\r\n\t\tvec3(-sin(rad), 0.0, cos(rad))\r\n\t);\r\n}\r\n\r\nmat3 rotateMatZ(float angle) {\r\n\tfloat rad = radians(angle);\r\n\treturn mat3(\r\n\t\tvec3(cos(rad), -sin(rad), 0.0),\r\n\t\tvec3(sin(rad), cos(rad), 0.0),\r\n\t\tvec3(0.0, 0.0, 1.0)\r\n\t);\r\n}\r\n\r\nmat3 scaleMat(float amt) {\r\n\treturn mat3(\r\n\t\tvec3(amt, 0.0, 0.0),\r\n\t\tvec3(0.0, amt, 0.0),\r\n\t\tvec3(0.0, 0.0, amt)\r\n\t);\r\n}\r\n\r\n// polynomial smooth min\r\nfloat smin( float a, float b, float k ) {\r\n    float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );\r\n    return mix( b, a, h ) - k*h*(1.0-h);\r\n}\r\n\r\nfloat sminExp( float a, float b, float k ) {\r\n    float res = exp( -k*a ) + exp( -k*b );\r\n    return -log( res )/k;\r\n}\r\n\r\nfloat sminPow( float a, float b, float k ) {\r\n    a = pow( a, k ); b = pow( b, k );\r\n    return pow( (a*b)/(a+b), 1.0/k );\r\n} \r\n\r\n\r\n\r\nfloat sphereSDF(vec3 p, float r) {\r\n\t\treturn length(p) - r;\r\n}\r\n\r\nfloat cubeSDF( vec3 p, float r) {\r\n     vec3 d = abs(p) - vec3(r, r, r);   \r\n     float insideDistance = min(max(d.x, max(d.y, d.z)), 0.0);\r\n     float outsideDistance = length(max(d, 0.0));  \r\n     return insideDistance + outsideDistance;\r\n }\r\n\r\n float sdCappedCylinder( vec3 p, vec2 h ) {\r\n  vec2 d = abs(vec2(length(p.xz),p.y)) - h;\r\n  return min(max(d.x,d.y),0.0) + length(max(d,0.0));\r\n}\r\n\r\nfloat udBox( vec3 p, vec3 b ) {\r\n  return length(max(abs(p)-b,0.0));\r\n}\r\n\r\nfloat sdCone( vec3 p, vec2 c ) {\r\n    // c must be normalized\r\n    float q = length(p.xy);\r\n    return dot(c,vec2(q,p.z));\r\n}\r\n\r\nfloat sdCappedCone( in vec3 p, in vec3 c ) {\r\n    vec2 q = vec2( length(p.xz), p.y );\r\n    vec2 v = vec2( c.z*c.y/c.x, -c.z );\r\n    vec2 w = v - q;\r\n    vec2 vv = vec2( dot(v,v), v.x*v.x );\r\n    vec2 qv = vec2( dot(v,w), v.x*w.x );\r\n    vec2 d = max(qv,0.0)*qv/vv;\r\n    return sqrt( dot(w,w) - max(d.x,d.y) ) * sign(max(q.y*v.x-q.x*v.y,w.y));\r\n}\r\n\r\nfloat udRoundBox( vec3 p, vec3 b, float r ) {\r\n  return length(max(abs(p)-b,0.0))-r;\r\n}\r\n\r\nfloat sdCapsule( vec3 p, vec3 a, vec3 b, float r ) {\r\n    vec3 pa = p - a, ba = b - a;\r\n    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );\r\n    return length( pa - ba*h ) - r;\r\n}\r\n\r\n// a better capped cone function (like what)\r\nfloat sdConeSection( in vec3 p, in float h, in float r1, in float r2 ) {\r\n    float d1 = -p.y - h;\r\n    float q = p.y - h;\r\n    float si = 0.5*(r1-r2)/h;\r\n    float d2 = max( sqrt( dot(p.xz,p.xz)*(1.0-si*si)) + q*si - r2, q );\r\n    return length(max(vec2(d1,d2),0.0)) + min(max(d1,d2), 0.);\r\n}\r\n\r\n//~~~~~HEAD SDFs~~~~~///\r\nfloat bugHeadSDF(vec3 p) {\r\n\tp = p * rotateMatY(-90.0);\r\n\tfloat base = sphereSDF(p, u_Head[3]);\r\n \tfloat eyes = min(sphereSDF(p + u_Head[3] * vec3(0.55,-0.35,-.71), u_Head[3] * .2), sphereSDF(p + u_Head[3] * vec3(-0.55,-0.35,-.71), u_Head[3] * .2));\r\n\tfloat mandibleBase = sdCappedCylinder(p + u_Head[3] * vec3(0.0,0.001,-.9), u_Head[3] * vec2(1.2, 0.1));\r\n\tfloat mandibles = max(mandibleBase, -sphereSDF(p + u_Head[3] * vec3(0.0,0.0,-0.60), .7 * u_Head[3]));\r\n\tmandibles = max(mandibles, -sphereSDF(p + u_Head[3] * vec3(0.0,0.0,-1.70), .7 * u_Head[3]));\r\n\tfloat head = smin(min(base, eyes), mandibles, .05);\r\n\treturn head;\r\n}\r\n\r\nfloat dinoHeadSDF(vec3 p) {\r\n\tp = p * rotateMatY(-90.0);\r\n\tfloat base = sphereSDF(p, u_Head[3]);\r\n\tfloat topJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.3,-1.4), u_Head[3] * 1.08);\r\n\ttopJaw = max(topJaw, -cubeSDF(p + u_Head[3] * vec3(0.0,1.4,-1.4), u_Head[3] * 1.2));\r\n\tfloat bottomJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.6,-1.0), u_Head[3] * .7);\r\n\tbottomJaw = max(bottomJaw, -cubeSDF((p + u_Head[3] * vec3(0.0,-.4,-1.7)) * rotateMatX(45.0), u_Head[3] * 1.1));\r\n\tfloat combine = smin(base, topJaw, .04);\r\n\tcombine = smin(combine, bottomJaw, .08);\r\n\r\n\tfloat eyes = min(sphereSDF(p + u_Head[3] * vec3(.9,0.0,0.0), u_Head[3] * .3), sphereSDF(p + u_Head[3] * vec3(-0.9,0.0,0.0), u_Head[3] * .3));\r\n\tcombine = min(combine, eyes);\r\n\tfloat brows = min(udBox((p + u_Head[3] * vec3(.85,-0.35,0.0)) * rotateMatX(-20.0), u_Head[3] * vec3(.3,.2,.5)), udBox((p + u_Head[3] * vec3(-0.85,-0.35,0.0)) * rotateMatX(-20.0), u_Head[3] * vec3(.3,.2,.5)));\r\n\tcombine = min(combine, brows);\r\n\r\n\tfloat teeth = sdCappedCone((p + u_Head[3] * vec3(0.4,0.7,-1.8)) * rotateMatX(180.0), u_Head[3] * vec3(3.0,1.0,1.0));\r\n\tteeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(-0.4,0.7,-1.8)) * rotateMatX(180.0), u_Head[3] * vec3(3.0,1.0,1.0)));\r\n\tteeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(-0.4,0.7,-1.3)) * rotateMatX(180.0), u_Head[3] * vec3(2.7,1.0,1.0)));\r\n\tteeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(0.4,0.7,-1.3)) * rotateMatX(180.0), u_Head[3] * vec3(2.7,1.0,1.0)));\r\n\tcombine = min(combine, teeth);\r\n\treturn combine;\r\n}\r\n\r\nfloat trollHeadSDF(vec3 p) {\r\n\tp = p * rotateMatY(-270.0);\r\n\tfloat base = sphereSDF(p, u_Head[3]);\r\n\tfloat bottomJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.3,.62), u_Head[3] * 1.08);\r\n\tbottomJaw = max(bottomJaw, -cubeSDF(p + u_Head[3] * vec3(0.0,-1.0,.45), u_Head[3] * 1.3));\r\n\tfloat combine = smin(base, bottomJaw, .04);\r\n\tfloat teeth = sdCappedCone(p + u_Head[3] * vec3(0.65,-0.7,1.1), u_Head[3] * vec3(4.0,1.0,1.0));\r\n\tteeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(-0.65,-0.7,1.1), u_Head[3] * vec3(4.0,1.0,1.0)));\r\n\tteeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(-0.25,-0.2,1.4), u_Head[3] * vec3(3.4,.5,.5)));\r\n\tteeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(0.25,-0.2,1.4), u_Head[3] * vec3(3.4,.5,.5)));\r\n\tcombine = min(combine, teeth);\r\n\tfloat eyes = min(sphereSDF(p + u_Head[3] * vec3(.3,-0.5,0.7), u_Head[3] * .2), sphereSDF(p + u_Head[3] * vec3(-.3,-0.5,0.7), u_Head[3] * .2));\r\n\tfloat monobrow = udBox((p + u_Head[3] * vec3(0.0,-0.7,.65)) * rotateMatX(-20.0), u_Head[3] * vec3(.6,.2,.2));\r\n\tcombine = min(min(combine, eyes), monobrow);\r\n\treturn combine;\r\n}\r\n\r\n//~~~~HAND/FEET SDFs~~~~~//\r\n\r\n// For now, size is based on head size, but later make it the average joint size\r\nfloat clawHandSDF(vec3 p) {\r\n\tfloat base = udRoundBox(p, u_Head[3] * vec3(.3,.3,.1), .03);\r\n\tfloat fingees = sdCappedCone(p + u_Head[3] * vec3(-0.65,-0.7,1.1), u_Head[3] * vec3(1.0,1.0,1.0));\r\n\tfloat combine = min(base, fingees);\r\n\treturn sdConeSection(p, .1, .2,.1);\r\n}\r\n\r\n\r\nfloat armSDF(vec3 p) {\r\n\r\n\tfloat allLimbs = MAX_DIST;\r\n\tint incr = 0;\r\n\tint numLimbs = 0;\r\n\tfor(int j = 0; j < (u_jointNum*3); j = j + incr) {\r\n\tnumLimbs++;\r\n\t\t\r\n\tint count = 0;\r\n\t\r\n\t// NEED joint number to do the below operations...\r\n\t\r\n\tcount = int(u_JointID[numLimbs - 1]);\t\r\n\r\n\tfloat arm = MAX_DIST;\r\n\t// all joint positions for a LIM (jointNum * 3)\r\n\tfor(int i = j; i < (j+(count * 3)); i = i + 3) {\r\n\t\tvec3 pTemp = p + vec3(u_JointLoc[i], u_JointLoc[i+1], u_JointLoc[i+2]);\r\n\t\tarm = min(arm, sphereSDF(pTemp, u_JointRad[i/3]));\r\n\r\n\t}\r\n\r\n\t// for 3 * (jointNum(per limb) - 1), each joint until last one\r\n\tfloat segments = MAX_DIST;\r\n\tfor(int i = j; i < (j+((count-1) * 3)); i = i + 3) {\r\n\t\tvec3 point0 = vec3(u_JointLoc[i], u_JointLoc[i+1], u_JointLoc[i+2]);\r\n\t    vec3 point1 = vec3(u_JointLoc[i+3], u_JointLoc[i+4] ,u_JointLoc[i+5]);\r\n\t\tvec3 midpoint = vec3((point0.x + point1.x)/2.0, (point0.y + point1.y)/2.0, (point0.z + point1.z)/2.0);\r\n\t\tfloat len = distance(point0, point1);\r\n\t\tvec3 dir = point1 - point0;\r\n\t\tvec3 up = vec3(0.0,1.0,0.0);\r\n\t\tfloat angle = acos((dir.x*up.x + dir.y*up.y + dir.z*up.z)/(length(dir)*length(up)));\r\n\t\tangle = angle * (180.0/3.14159);\r\n\r\n\t\t// Essentially reverses rotation angle based on the location of the next joint\r\n\t\tfloat flip = -1.0;\r\n\t\tif((point0.x - point1.x) < 0.0) {\r\n\t\t\tflip *= -1.0;\r\n\t\t}\r\n\r\n\t\tfloat part = sdConeSection((p + midpoint) * rotateMatZ(flip * angle), len/2.0, u_JointRad[(i+3)/3],u_JointRad[i/3]);\r\n\t\tsegments = min(segments, part);\r\n\t}\r\n\r\n\tfloat combine = min(arm, segments); // this is one arm\r\n\tallLimbs = min(allLimbs, combine); //merge with all other limbs\r\n\r\n\tincr = count * 3;\r\n\r\n\t} \r\n\r\n\treturn allLimbs;\r\n}\r\n\r\n\r\nfloat spineSDF(vec3 p) {\r\n\tfloat spine = MAX_DIST;\r\n\tfor (int i = 0; i < u_SpineLoc.length(); i += 3) {\r\n\t\tif (u_SpineLoc[i] == 0. && u_SpineLoc[i+1] == 0. && u_SpineLoc[i+2] == 0.) continue;\r\n\t\tvec3 pTemp = p + vec3(u_SpineLoc[i], u_SpineLoc[i+1], u_SpineLoc[i+2]);\r\n\t\tspine = smin(spine, sphereSDF(pTemp, u_SpineRad[i/3]), 0.06);\r\n\t}\r\n\treturn spine;\r\n}\r\n\r\n// OVERALL SCENE SDF -- rotates about z-axis (turn-table style)\r\nfloat sceneSDF(vec3 p) {\r\n\tp += vec3(0, 0, 0);\r\n\t// p = p * rotateMatY(u_Time) ; // rotates creature\r\n\r\n\tif(u_Head[4] == 0.0) {\r\n\t\theadType = bugHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));\r\n\t}\t\r\n\telse if(u_Head[4] == 1.0){\r\n\t\theadType = dinoHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));\r\n\t}\t\r\n\telse if(u_Head[4] == 2.0){\r\n\t\theadType = trollHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));\r\n\t}\r\n\treturn smin(spineSDF(p), headType, 0.08);\r\n\t//return armSDF(p);\r\n}\r\n\r\n//~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//\r\nfloat march(vec3 rayOrigin, vec3 direction) {\r\n\tfloat dist = MIN_DIST;\r\n\tfor(int i = 0; i < MAX_STEPS; i++) {\r\n\t\tvec3 pos = rayOrigin + dist * direction;\r\n\t\tfloat dt = sceneSDF(pos);\r\n\t\tif(dt < EPSILON) {\r\n\t\t\treturn dist;\r\n\t\t}\r\n\t\tdist += dt;\r\n\t\tif(dist >= MAX_DIST) {\r\n\t\t\treturn MAX_DIST;\r\n\t\t}\r\n\t}\r\n\treturn MAX_DIST;\r\n}\r\n\r\nvec3 normal(vec3 p) {\r\n\tfloat gradX = sceneSDF(vec3(p.x + EPSILON, p.y, p.z)) - sceneSDF(vec3(p.x - EPSILON, p.y, p.z));\r\n\tfloat gradY = sceneSDF(vec3(p.x, p.y + EPSILON, p.z)) - sceneSDF(vec3(p.x, p.y - EPSILON, p.z));\r\n\tfloat gradZ = sceneSDF(vec3(p.x, p.y, p.z + EPSILON)) - sceneSDF(vec3(p.x, p.y, p.z - EPSILON));\r\n\treturn normalize(vec3(gradX, gradY, gradZ));\r\n}\r\n\r\nvec3 rayDirection(float fieldOfView, vec2 size, vec2 fragCoord) {\r\n    vec2 xy = fragCoord - size / 2.0;\r\n    float z = size.y / tan(radians(fieldOfView) / 2.0);\r\n    return normalize(vec3(xy, -z));\r\n}\r\n\r\nmat4 viewMatrix(vec3 eye, vec3 center, vec3 up) {\r\n    vec3 f = normalize(center - eye);\r\n    vec3 s = normalize(cross(f, up));\r\n    vec3 u = cross(s, f);\r\n    return mat4(\r\n        vec4(s, 0.0),\r\n        vec4(u, 0.0),\r\n        vec4(-f, 0.0),\r\n        vec4(0.0, 0.0, 0.0, 1)\r\n    );\r\n} \r\n\r\nvoid main() {\r\n\tvec3 eye = -u_View[3].xyz;\r\n\tvec3 up = u_View[1].xyz;\r\n\tvec3 forward = u_View[2].xyz;\r\n\tvec3 right = u_View[0].xyz;\r\n\r\n\tvec2 coord = vec2(-fs_Pos.x * u_Resolution.x/u_Resolution.y, -fs_Pos.y);\r\n\tvec3 dest = eye + forward + right * coord[0] + up * coord[1];\r\n\t// vec3 viewDir = rayDirection(20.0, normalize(u_Resolution), coord);\r\n    \r\n    // mat4 viewToWorld = u_View;//viewMatrix(eye, vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0));\r\n    \r\n    vec3 dir = normalize(eye - dest); //(viewToWorld * vec4(viewDir, 0.0)).xyz;\r\n\t\r\n\tfloat distance = march(eye, dir);\r\n\r\n\tif(distance >= MAX_DIST - 2.0 * EPSILON) {\r\n\t\t// Colors background with a gradient!\r\n\t\tvec4 col1 = vec4(0.0,0.0,1.0,1.0);\r\n\t\tvec4 col2 = vec4(0.0,1.0,0.0,1.0);\r\n\t\tout_Col = vec4(col1 * (gl_FragCoord.y / u_Resolution.y)) + vec4(col2 * (2.4 - (gl_FragCoord.y / u_Resolution.y)));\r\n\t\treturn;\r\n\t}\r\n\r\n\t// Colors geometry with Lambert Shader\r\n\t vec3 p = eye + distance * dir;\r\n\t vec3 lightVec = vec3(17.0,40.0,50.0) - p;\r\n\t float diffuseTerm = dot(normalize(normal(p)), normalize(lightVec));\r\n\t diffuseTerm = clamp(diffuseTerm, 0.0, 1.0);\r\n\t float ambientTerm = 0.2;\r\n\t float lightIntensity = diffuseTerm + ambientTerm;\r\n\r\n\t out_Col = vec4(vec3(1.0,0.0,0.0) * lightIntensity, 1.0) ;\r\n\r\n\t//  out_Col = vec4(0.5 * (dir + vec3(1,1,1)), 1.);\r\n}\r\n"
 
 /***/ })
 /******/ ]);

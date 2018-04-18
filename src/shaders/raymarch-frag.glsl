@@ -202,7 +202,6 @@ float clawHandSDF(vec3 p) {
 	float base = udRoundBox(p, u_Head[3] * vec3(.3,.3,.1), .03);
 	float fingees = sdCappedCone(p + u_Head[3] * vec3(-0.65,-0.7,1.1), u_Head[3] * vec3(1.0,1.0,1.0));
 	float combine = min(base, fingees);
-	//return sdCappedCone(p,vec3(1.0,.2,1.0));
 	return sdConeSection(p, .1, .2,.1);
 }
 
@@ -274,13 +273,8 @@ float spineSDF(vec3 p) {
 
 // OVERALL SCENE SDF -- rotates about z-axis (turn-table style)
 float sceneSDF(vec3 p) {
-<<<<<<< HEAD
-	//p += vec3(-1., 0, 0);
-	p = p * rotateMatY(u_Time) ; // rotates creature
-=======
 	p += vec3(0, 0, 0);
 	// p = p * rotateMatY(u_Time) ; // rotates creature
->>>>>>> 7ab31fbdbbb5a1fe7235b73e749b9fb3ada05a4d
 
 	if(u_Head[4] == 0.0) {
 		headType = bugHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
@@ -291,7 +285,8 @@ float sceneSDF(vec3 p) {
 	else if(u_Head[4] == 2.0){
 		headType = trollHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
 	}
-	return min(smin(spineSDF(p), headType, 0.08), armSDF(p));
+	return smin(spineSDF(p), headType, 0.08);
+	//return armSDF(p);
 }
 
 //~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
