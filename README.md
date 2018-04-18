@@ -31,39 +31,6 @@ Demo link: https://nmagarino.github.io/cis566---Final-Project/
 
 From here, we plan on finishing implementation of the arms and legs by making them more procedurally generated/randomized.  We also plan on coloring different parts of the creature a separate color (aside from just red).  Our creature is already killing the FPS quite a bit, so we're thinking of using bounding boxes to optimize the ray marcher.
 
-<<<<<<< HEAD
-So far we've basically met all of our milestones, finishing the spine class by week 1 and making progress on the limb class during week 2.  We've constructed our code from Nick's base code from the Implicit Surfaces homework (HW2).  
-
-During week 1, Josh created a framework for the creature creator by making the Creature and Spine classes in src/bodyParts, then passing information from these classes to ray marcher ShaderProgram through src/main.ts.  This passed information contained sphere SDF positions and radii to construct the metaballs that make up the creature spine.  This spine is made of interpolated positions from 4 spline points, totalling 12 metaballs.
-Nick then added a head to this spine, based on hard-coded head types, simply attached to the end of the first metaball.  For now, these heads are randomly chosen, but we're thinking of adding user interaction to select a head type.  Here are some random creatures!:
-
-![](larvae.PNG)
-
-![](dino.PNG)
-
-![](bigBoy.PNG)
-
-![](raptor.PNG)
-
-![](longboy.PNG)
-
-We're thinking of adjusting the metaball positioning a bit to avoid some more weird, unnatural, or undesirable body types (not to body-shame or anything):
-
-![](grossboy.PNG)
-
-Additionally, we've begun working on limb construction.  For now, we have the framework for at least rendering some hard-coded arms and legs.  Just the limbs themselves will look something like this:
-
-![](limbs.PNG)
-
-We're going to attach hard-coded hands and feet at the ends of these limbs.  Josh also added camera controls so that the creature can be freely viewed in 3d.  This can be seen in a demo.
-
-Demo link:
-
-From here, we plan on finishing implementation of the arms and legs by making them more procedurally generated/randomized.  We also plan on coloring different parts of the creature a separate color (aside from just red).  Our creature is already killing the FPS quite a bit, so we're thinking of using bounding boxes to optimize the ray marcher.
-
-=======
->>>>>>> ae5b0b86f1bf4539b6f902eb4320a620a3efb7c7
-
 # Design Doc
 
 Group Members: Josh Nadel and Nicholas Magarino
