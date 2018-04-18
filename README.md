@@ -21,7 +21,15 @@ We're thinking of adjusting the metaball positioning a bit to avoid some more we
 
 ![](grossboy.PNG)
 
+Additionally, we've begun working on limb construction.  For now, we have the framework for at least rendering some hard-coded arms and legs.  Just the limbs themselves will look something like this:
 
+![](limbs.PNG)
+
+We're going to attach hard-coded hands and feet at the ends of these limbs.  Josh also added camera controls so that the creature can be freely viewed in 3d.  This can be seen in a demo.
+
+Demo link:
+
+From here, we plan on finishing implementation of the arms and legs by making them more procedurally generated/randomized.  We also plan on coloring different parts of the creature a separate color (aside from just red).  Our creature is already killing the FPS quite a bit, so we're thinking of using bounding boxes to optimize the ray marcher.
 
 
 # Design Doc
