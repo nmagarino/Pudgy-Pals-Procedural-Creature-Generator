@@ -49,7 +49,9 @@ function main() {
   screenQuad = new Square(vec3.fromValues(0, 0, 0));
   screenQuad.create();
 
-  const camera = new Camera(vec3.fromValues(0, 0, 5), vec3.fromValues(0, 0, 0));
+  const camera = new Camera(vec3.fromValues(0, 0, 2.01), vec3.fromValues(0, 0, 2));
+  camera.controls.translateSpeed = 0;
+  camera.controls.zoomSpeed = 0;
 
   gl.clearColor(0.0, 0.0, 0.0, 1);
   gl.disable(gl.DEPTH_TEST);
@@ -104,6 +106,11 @@ function main() {
     
     raymarchShader.setResolution(vec2.fromValues(window.innerWidth, window.innerHeight));
     raymarchShader.setTime(time);
+    raymarchShader.setViewMatrix(camera.viewMatrix);
+    // raymarchShader.setEye(camera.controls.eye);
+    // raymarchShader.setUp(camera.direction);
+    // raymarchShader.setRight(vec3.cross(vec3.create(), camera.direction, camera.up));
+    // raymarchShader.setForward(camera.up);
     // March!
     raymarchShader.draw(screenQuad);
 

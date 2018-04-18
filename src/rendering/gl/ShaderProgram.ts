@@ -24,6 +24,10 @@ class ShaderProgram {
   attrPos: number;
 
   unifView: WebGLUniformLocation;
+  unifEye: WebGLUniformLocation;
+  unifUp: WebGLUniformLocation;
+  unifRight: WebGLUniformLocation;
+  unifForward: WebGLUniformLocation;
 
   unifResolution: WebGLUniformLocation;
 
@@ -53,6 +57,11 @@ class ShaderProgram {
 
     // TODO: add other attributes here
     this.unifView   = gl.getUniformLocation(this.prog, "u_View");
+    // this.unifEye   = gl.getUniformLocation(this.prog, "u_Eye");
+    // this.unifForward   = gl.getUniformLocation(this.prog, "u_Forward");
+    // this.unifUp   = gl.getUniformLocation(this.prog, "u_Up");
+    // this.unifRight   = gl.getUniformLocation(this.prog, "u_Right");
+
     this.unifResolution = gl.getUniformLocation(this.prog, "u_Resolution");
     this.unifTime       = gl.getUniformLocation(this.prog, "u_Time");
     this.unifSpineLocations = gl.getUniformLocation(this.prog, "u_SpineLoc");
@@ -68,6 +77,41 @@ class ShaderProgram {
     if (activeProgram !== this.prog) {
       gl.useProgram(this.prog);
       activeProgram = this.prog;
+    }
+  }
+
+  setEye(eye: vec3) {
+    this.use();
+    if (this.unifEye !== -1) {
+      gl.uniform3fv(this.unifEye, eye);
+    }
+  }
+
+  setUp(up: vec3) {
+    this.use();
+    if (this.unifUp !== -1) {
+      gl.uniform3fv(this.unifUp, up);
+    }
+  }
+
+  setRight(right: vec3) {
+    this.use();
+    if (this.unifRight !== -1) {
+      gl.uniform3fv(this.unifRight, right);
+    }
+  }
+
+  setForward(forward: vec3) {
+    this.use();
+    if (this.unifForward !== -1) {
+      gl.uniform3fv(this.unifForward, forward);
+    }
+  }
+
+  setViewMatrix(vp: mat4) {
+    this.use();
+    if (this.unifView !== -1) {
+      gl.uniformMatrix4fv(this.unifView, false, vp);
     }
   }
 
