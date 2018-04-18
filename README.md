@@ -7,6 +7,21 @@ So far we've basically met all of our milestones, finishing the spine class by w
 During week 1, Josh created a framework for the creature creator by making the Creature and Spine classes in src/bodyParts, then passing information from these classes to ray marcher ShaderProgram through src/main.ts.  This passed information contained sphere SDF positions and radii to construct the metaballs that make up the creature spine.  This spine is made of interpolated positions from 4 spline points, totalling 12 metaballs.
 Nick then added a head to this spine, based on hard-coded head types, simply attached to the end of the first metaball.  For now, these heads are randomly chosen, but we're thinking of adding user interaction to select a head type.  Here are some random creatures!:
 
+![](larvae.PNG)
+
+![](dino.PNG)
+
+![](bigBoy.PNG)
+
+![](raptor.PNG)
+
+![](longboy.PNG)
+
+We're thinking of adjusting the metaball positioning a bit to avoid some more weird, unnatural, or undesirable body types (not to body-shame or anything):
+
+![](grossboy.PNG)
+
+
 
 
 # Design Doc
