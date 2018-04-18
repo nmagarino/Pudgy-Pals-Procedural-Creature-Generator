@@ -5,7 +5,7 @@
 So far we've basically met all of our milestones, finishing the spine class by week 1 and making progress on the limb class during week 2.  We've constructed our code from Nick's base code from the Implicit Surfaces homework (HW2).  
 
 During week 1, Josh created a framework for the creature creator by making the Creature and Spine classes in src/bodyParts, then passing information from these classes to ray marcher ShaderProgram through src/main.ts.  This passed information contained sphere SDF positions and radii to construct the metaballs that make up the creature spine.  This spine is made of interpolated positions from 4 spline points, totalling 12 metaballs.
-Nick then added a head to this spine, based on hard-coded head types, simply attached to the end of the first metaball.  Here are some random creatures!:
+Nick then added a head to this spine, based on hard-coded head types, simply attached to the end of the first metaball.  For now, these heads are randomly chosen, but we're thinking of adding user interaction to select a head type.  Here are some random creatures!:
 
 
 
