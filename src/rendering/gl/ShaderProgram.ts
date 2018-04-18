@@ -31,6 +31,7 @@ class ShaderProgram {
 
   unifSpineLocations: WebGLUniformLocation;
   unifSpineRadii: WebGLUniformLocation;
+  unifJointNumber: WebGLUniformLocation;
   unifLimbJointLocations: WebGLUniformLocation;
   unifLimbJointRadii: WebGLUniformLocation;
   unifLimbJointIDs: WebGLUniformLocation;
@@ -60,6 +61,7 @@ class ShaderProgram {
     this.unifLimbJointIDs = gl.getUniformLocation(this.prog, "u_JointID");
     this.unifLimbJointLocations = gl.getUniformLocation(this.prog, "u_JointLoc");
     this.unifLimbJointRadii = gl.getUniformLocation(this.prog, "u_JointRad");
+    this.unifJointNumber = gl.getUniformLocation(this.prog, "u_jointNum");
   }
 
   use() {
@@ -124,6 +126,13 @@ class ShaderProgram {
     this.use();
     if(this.unifLimbJointIDs !== -1) {
       gl.uniform1fv(this.unifLimbJointIDs, radii);
+    }
+  }
+
+  setJointNumber(num : number) {
+    this.use();
+    if(this.unifJointNumber !== -1) {
+      gl.uniform1i(this.unifJointNumber, num);
     }
   }
 

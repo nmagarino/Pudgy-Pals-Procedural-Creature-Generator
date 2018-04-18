@@ -13,6 +13,14 @@ uniform float u_SpineRad[8];
 
 uniform float u_Head[5]; // indices 0-2 are positions, 3 is radius
 
+uniform int u_jointNum;
+
+uniform float u_JointID[4];  //size is number of limbs
+uniform float u_JointLoc[50]; //size is  numbe of joints * 3
+uniform float u_JointRad[50]; //size is number of joints
+//pass in number of joints...
+
+
 float headType;
 
 const int MAX_STEPS = 300;
@@ -111,99 +119,26 @@ float sdCappedCone( in vec3 p, in vec3 c ) {
     return sqrt( dot(w,w) - max(d.x,d.y) ) * sign(max(q.y*v.x-q.x*v.y,w.y));
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~CODE FROM ROBOT CONSTRUCTION (SDF REFERENCE)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-// float cubeSDF( vec3 p, float r) {
-// 	vec3 d = abs(p) - vec3(r, r, r);   
-//     float insideDistance = min(max(d.x, max(d.y, d.z)), 0.0);
-//     float outsideDistance = length(max(d, 0.0));  
-//     return insideDistance + outsideDistance;
-// }
+float udRoundBox( vec3 p, vec3 b, float r ) {
+  return length(max(abs(p)-b,0.0))-r;
+}
 
-// h defines the width and height of the cylinder
-// float sdCappedCylinder( vec3 p, vec2 h ) {
-//   vec2 d = abs(vec2(length(p.xz),p.y)) - h;
-//   return min(max(d.x,d.y),0.0) + length(max(d,0.0));
-// }
+float sdCapsule( vec3 p, vec3 a, vec3 b, float r ) {
+    vec3 pa = p - a, ba = b - a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+    return length( pa - ba*h ) - r;
+}
 
-// float udRoundBox( vec3 p, vec3 b, float r ) {
-//   return length(max(abs(p)-b,0.0))-r;
-// }
+// a better capped cone function (like what)
+float sdConeSection( in vec3 p, in float h, in float r1, in float r2 ) {
+    float d1 = -p.y - h;
+    float q = p.y - h;
+    float si = 0.5*(r1-r2)/h;
+    float d2 = max( sqrt( dot(p.xz,p.xz)*(1.0-si*si)) + q*si - r2, q );
+    return length(max(vec2(d1,d2),0.0)) + min(max(d1,d2), 0.);
+}
 
-// float sdTorus(vec3 p, vec2 t) {
-//   vec2 q = vec2(length(p.xz)-t.x,p.y);
-//   return length(q)-t.y;
-// }
-
-// float headSDF(vec3 p) {
-// 	float base = max(sphereSDF(p + vec3(0.0,-.6,0.0), .5), -cubeSDF(p, .6));
-// 	float eyes = min(sphereSDF(p + vec3(0.25,-0.75,-.33), .1), sphereSDF(p + vec3(-0.25,-0.75,-.33), .1));
-// 	float antennaes = min(sdCappedCylinder(p + vec3(.4,-1.0,0.2), vec2(.028,.4)), sdCappedCylinder(p + vec3(-.4,-1.0,0.2), vec2(.028,.4)));
-// 	return min(min(base, eyes), antennaes);
-// }
-
-// float neckSDF(vec3 p) {
-//     float outside = min(min(sdCappedCylinder(p + vec3(0.0,0.0,0.0), vec2(.1, .1)), sdCappedCylinder(p + vec3(0.0,-0.23,0.0), vec2(.1, .1))), 
-// 		            sdCappedCylinder(p + vec3(0.0,-0.46,0.0), vec2(.1, .1)));
-// 	float inner = sdCappedCylinder(p + vec3(0.0,-.5,0.0), vec2(.05, .4));
-// 	return min(inner, outside);
-// }
-
-// float bodySDF(vec3 p) {
-// 	float chest = udRoundBox(p + vec3(0.0, .3, 0.0), vec3(0.27,0.22,0.2), .07);
-// 	float spine = sdCappedCylinder(p + vec3(0.0,0.74,0.0), vec2(.15, .15));
-// 	return min(spine, chest);
-// }
-
-// float pelvisSDF(vec3 p) {
-// 	return udRoundBox(p + vec3(0.0, 1.1, 0.0), vec3(0.26,0.18,0.17), .07);;
-// }
-
-// float shouldersSDF(vec3 p) {
-// 	return min(udRoundBox(p + vec3(0.3,0.0,0.0), vec3(.1,.1,.23), .095), udRoundBox(p + vec3(-0.3,0.0,0.0) , vec3(.1,.1,.23), .095));
-// }
-
-// float handsSDF(vec3 p) {
-// 	float cutCube = cubeSDF(p + vec3(1.4,-2.42,0.0), .25);
-// 	float cutCube2 = cubeSDF(p + vec3(-1.4,-2.42,0.0), .25);
-// 	return min(max(-cutCube, sdTorus(p * rotateMatX(90.0) + vec3(1.4,0.0,-2.06), vec2(0.34,0.08))),
-// 			   max(-cutCube2, sdTorus(p * rotateMatX(90.0) + vec3(-1.4,0.0,-2.06), vec2(0.34,0.08))));	
-// }
-
-// float armsSDF(vec3 p) {
-// 	float biceps =  min(sdCappedCylinder(p * rotateMatZ(90.0) + vec3(0.0,0.6,0.0), vec2(.1,.9)), sdCappedCylinder(p * rotateMatZ(90.0) + vec3(0.0,-0.6,0.0), vec2(.1,.9)));
-//     float forearms = min(sdCappedCylinder(p + vec3(1.4,-0.8,0.0), vec2(.1,.9)), sdCappedCylinder(p + vec3(-1.4,-0.8,0.0), vec2(.1,.9)));
-
-// 	return min(handsSDF(p),smin(biceps, forearms, 10.0));
-// }
-
-// float legsSDF(vec3 p) {
-// 	return min(sdCappedCylinder(p + vec3(.2,2.0,0.0), vec2(.1, .8)), sdCappedCylinder(p + vec3(-.2,2.0,0.0), vec2(.1, .8)));
-// }
-
-// float feetSDF(vec3 p) {
-// 	float foot1 = udRoundBox(p * rotateMatY(45.0) + vec3(0.2,2.7,-0.33), vec3(0.14,0.05,0.3), 0.06);
-// 	float foot2 = udRoundBox(p * rotateMatY(-45.0) + vec3(-0.2,2.7,-0.33), vec3(0.14,0.05,0.3), 0.06);
-// 	return min(foot2, foot1);
-// }
-
-// float upperBodySDF(vec3 p) {
-// 	float headBod = (min(min(headSDF(rotateMatY(u_Time * 3.6) * p + vec3(0.0,-.1 + sin(u_Time / 2.0)/5.0,0.0) ), neckSDF(p)), smin(bodySDF(p),shouldersSDF(p),10.0) ));
-// 	float armsToo = armsSDF(p * rotateMatX(-u_Time * 2.1));
-// 	return min(headBod, armsToo);
-// }
-
-// float legsFeet(vec3 p) {
-// 	return min(legsSDF(p), feetSDF(p));
-// }
-
-// // Combines elements into one scene
-// float wholebodySDF(vec3 p) {
-// 	vec3 pEdit = p /.15; 
-// 	float part1 =  upperBodySDF(pEdit * rotateMatY(sin(u_Time / 4.0) * 28.45));
-// 	float part2 = legsFeet(pEdit * rotateMatX(sin(u_Time / 2.5) * 6.4));
-// 	return min(min(part1, part2), pelvisSDF(pEdit)) * .15;
-// }
-//~~~~~~~~~~~~~~~~~~~~~~~~~CODE FROM ROBOT CONSTRUCTION (SDF REFERENCE)~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+//~~~~~HEAD SDFs~~~~~///
 float bugHeadSDF(vec3 p) {
 	p = p * rotateMatY(-90.0);
 	float base = sphereSDF(p, u_Head[3]);
@@ -255,6 +190,73 @@ float trollHeadSDF(vec3 p) {
 	return combine;
 }
 
+//~~~~HAND/FEET SDFs~~~~~//
+
+// For now, size is based on head size, but later make it the average joint size
+float clawHandSDF(vec3 p) {
+	float base = udRoundBox(p, u_Head[3] * vec3(.3,.3,.1), .03);
+	float fingees = sdCappedCone(p + u_Head[3] * vec3(-0.65,-0.7,1.1), u_Head[3] * vec3(1.0,1.0,1.0));
+	float combine = min(base, fingees);
+	//return sdCappedCone(p,vec3(1.0,.2,1.0));
+	return sdConeSection(p, .1, .2,.1);
+}
+
+
+float armSDF(vec3 p) {
+
+	float allLimbs = MAX_DIST;
+	int incr = 0;
+	int numLimbs = 0;
+	for(int j = 0; j < (u_jointNum*3); j = j + incr) {
+	numLimbs++;
+		
+	int count = 0;
+	
+	// NEED joint number to do the below operations...
+	
+	count = int(u_JointID[numLimbs - 1]);	
+
+	float arm = MAX_DIST;
+	// all joint positions for a LIM (jointNum * 3)
+	for(int i = j; i < (j+(count * 3)); i = i + 3) {
+		vec3 pTemp = p + vec3(u_JointLoc[i], u_JointLoc[i+1], u_JointLoc[i+2]);
+		arm = min(arm, sphereSDF(pTemp, u_JointRad[i/3]));
+
+	}
+
+	// for 3 * (jointNum(per limb) - 1), each joint until last one
+	float segments = MAX_DIST;
+	for(int i = j; i < (j+((count-1) * 3)); i = i + 3) {
+		vec3 point0 = vec3(u_JointLoc[i], u_JointLoc[i+1], u_JointLoc[i+2]);
+	    vec3 point1 = vec3(u_JointLoc[i+3], u_JointLoc[i+4] ,u_JointLoc[i+5]);
+		vec3 midpoint = vec3((point0.x + point1.x)/2.0, (point0.y + point1.y)/2.0, (point0.z + point1.z)/2.0);
+		float len = distance(point0, point1);
+		vec3 dir = point1 - point0;
+		vec3 up = vec3(0.0,1.0,0.0);
+		float angle = acos((dir.x*up.x + dir.y*up.y + dir.z*up.z)/(length(dir)*length(up)));
+		angle = angle * (180.0/3.14159);
+
+		// Essentially reverses rotation angle based on the location of the next joint
+		float flip = -1.0;
+		if((point0.x - point1.x) < 0.0) {
+			flip *= -1.0;
+		}
+
+		float part = sdConeSection((p + midpoint) * rotateMatZ(flip * angle), len/2.0, u_JointRad[(i+3)/3],u_JointRad[i/3]);
+		segments = min(segments, part);
+	}
+
+	float combine = min(arm, segments); // this is one arm
+	allLimbs = min(allLimbs, combine); //merge with all other limbs
+
+	incr = count * 3;
+
+	} 
+
+	return allLimbs;
+}
+
+
 float spineSDF(vec3 p) {
 	float spine = MAX_DIST;
 	for (int i = 0; i < u_SpineLoc.length(); i += 3) {
@@ -267,7 +269,7 @@ float spineSDF(vec3 p) {
 
 // OVERALL SCENE SDF -- rotates about z-axis (turn-table style)
 float sceneSDF(vec3 p) {
-	p += vec3(-1., 0, 0);
+	//p += vec3(-1., 0, 0);
 	p = p * rotateMatY(u_Time) ; // rotates creature
 
 	if(u_Head[4] == 0.0) {
@@ -279,7 +281,7 @@ float sceneSDF(vec3 p) {
 	else if(u_Head[4] == 2.0){
 		headType = trollHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
 	}
-	return smin(spineSDF(p), headType, 0.08);
+	return min(smin(spineSDF(p), headType, 0.08), armSDF(p));
 }
 
 //~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
