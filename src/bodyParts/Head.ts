@@ -51,7 +51,7 @@ class Head {
 
 
   animate(time: number) {
-    this.headData[1] += 0.01* Math.sin(time * 0.5 + 0.3 * 1);
+    // this.headData[1] += 0.01* Math.sin(time * 0.5 + 0.3 * 1);
   }
 };
 
