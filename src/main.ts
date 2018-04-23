@@ -49,7 +49,7 @@ function main() {
   screenQuad = new Square(vec3.fromValues(0, 0, 0));
   screenQuad.create();
 
-  const camera = new Camera(vec3.fromValues(0, 0, 2.01), vec3.fromValues(0, 0, 2));
+  const camera = new Camera(vec3.fromValues(0, 1, 2.01), vec3.fromValues(0, 1, 2));
   camera.controls.translateSpeed = 0;
   camera.controls.zoomSpeed = 0;
 
@@ -75,38 +75,18 @@ function main() {
 
     creature.animate(time);
 
-    raymarchShader.setSpineLocations(creature.spine.metaBallPos);
+    raymarchShader.setSpineLocations(creature.spineLocations);
     raymarchShader.setSpineRadii(creature.spine.metaBallRadii);
     raymarchShader.setHead(creature.head.headData);
 
-    let locations : Array<number> = [
-      .3, 0.0, 0.0,
-      -0.1, -0.2, 0.9,
-      0.2, -0.3, 0.0,
-
-      -.3, 0.0, 0.0,
-      0.1, 0.2, 0.0,
-      -0.2, 0.3, 0.0,
-      -0.1, 0.5,0.0
-
-    ];
-
+    let locations : Array<number> = creature.jointLocations;
     raymarchShader.setJointLocations(locations);
-    let numJointsEach : Array<number> = [
-      3.0, 4.0
-    ];
-    raymarchShader.setJointIDs(numJointsEach);
-    raymarchShader.setJointRadii([
-      0.1,
-      0.08,
-      0.05,
 
-      0.1,
-      0.08,
-      0.05,
-      0.01
-    ]);
-    raymarchShader.setJointNumber(7);
+    let numJointsEach : Array<number> = creature.limbLengths;
+    raymarchShader.setLimbLengths(numJointsEach);
+    
+    raymarchShader.setJointRadii(creature.jointRadii);
+    //raymarchShader.setJointNumber(7);
 
     let rotations : mat4[] = [];
     let start : number = 0;
@@ -142,10 +122,7 @@ function main() {
     raymarchShader.setResolution(vec2.fromValues(window.innerWidth, window.innerHeight));
     raymarchShader.setTime(time);
     raymarchShader.setViewMatrix(camera.viewMatrix);
-    // raymarchShader.setEye(camera.controls.eye);
-    // raymarchShader.setUp(camera.direction);
-    // raymarchShader.setRight(vec3.cross(vec3.create(), camera.direction, camera.up));
-    // raymarchShader.setForward(camera.up);
+
     // March!
     raymarchShader.draw(screenQuad);
 

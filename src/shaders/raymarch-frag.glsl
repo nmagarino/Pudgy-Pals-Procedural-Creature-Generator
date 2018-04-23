@@ -18,16 +18,11 @@ uniform float u_SpineRad[8];
 
 uniform float u_Head[5]; // indices 0-2 are positions, 3 is radius
 
-uniform int u_jointNum;
+uniform int u_LimbLengths[8];  //size is number of limbs
+uniform float u_JointLoc[90]; //size is number of joints * 3
+uniform float u_JointRad[30]; //size is number of joints
 
-uniform float u_JointID[4];  //size is number of limbs
-uniform float u_JointLoc[50]; //size is  numbe of joints * 3
-uniform float u_JointRad[50]; //size is number of joints
-//pass in number of joints...
-
-uniform mat4 u_TestMat;
 uniform mat4[100] u_Rotations;
-
 
 float headType;
 
@@ -223,14 +218,19 @@ float armSDF(vec3 p) {
 	float allLimbs = MAX_DIST;
 	int incr = 0;
 	int numLimbs = 0;
-	for(int j = 0; j < (u_jointNum*3); j = j + incr) {
+	int jointNum = 0;
+	for (int i = 0; i < u_LimbLengths.length(); i++) {
+		jointNum += u_LimbLengths[i];
+	}
+
+	for(int j = 0; j < (jointNum*3); j = j + incr) {
 	numLimbs++;
 		
 	int count = 0;
 	
 	// NEED joint number to do the below operations...
 	
-	count = int(u_JointID[numLimbs - 1]);	
+	count = int(u_LimbLengths[numLimbs - 1]);	
 
 	float arm = MAX_DIST;
 	// all joint positions for a LIM (jointNum * 3)
@@ -299,10 +299,9 @@ float sceneSDF(vec3 p) {
 	else if(u_Head[4] == 2.0){
 		headType = trollHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
 	}
-	return min(smin(spineSDF(p), headType, 0.08), armSDF(p));
-	//return armSDF(p);
-	//return clawFootSDF(p  * rotateMatY(180.0) * rotateMatX(90.0));
-	//return handSDF(p);
+	float dist = smin(spineSDF(p), headType, 0.08);
+	dist = smin(dist, armSDF(p), 0.08);
+	return dist;
 }
 
 //~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//

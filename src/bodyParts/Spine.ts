@@ -2,7 +2,7 @@ import {vec2, vec3} from 'gl-matrix';
 
 class Spine {
   splinePoints: vec3[];
-  metaBallPos: number[];
+  metaBallPos: vec3[];
   metaBallRadii: number[];
 
   maxSpineRadius = 0.4;
@@ -16,7 +16,7 @@ class Spine {
     this.metaBallPos = [];
     this.metaBallRadii = [];
 
-    let numMetaBalls = 12;
+    let numMetaBalls = 8;
 
     let radius = ((this.maxSpineRadius - this.minSpineRadius) * Math.pow(Math.random(), 1.2) + this.minSpineRadius);  //pow to bias smaller radii
     for (let i = 0; i < numMetaBalls; i++) {
@@ -54,10 +54,20 @@ class Spine {
       vec3.add(positions[j], positions[j], vec3.scale(diff, diff, Math.max(dist - (this.metaBallRadii[j - 1]/2 + this.metaBallRadii[j]/2), 0)));
     }
 
+    let averagePos = vec3.create();
     for (let j = 0; j < numMetaBalls; j++) {
-      this.metaBallPos.push(positions[j][0]);
-      this.metaBallPos.push(positions[j][1]);
-      this.metaBallPos.push(positions[j][2]);
+      vec3.add(averagePos, averagePos, positions[j]);
+    }
+    vec3.scale(averagePos, averagePos, 1/numMetaBalls);
+    let creatureHeight = Math.random() * 1.5 + 0.5;
+    for (let j = 0; j < numMetaBalls; j++) {
+      vec3.subtract(positions[j], positions[j], averagePos);
+      vec3.add(positions[j], positions[j], vec3.fromValues(0, -creatureHeight, 0));
+      if (positions[j][1] > -0.2) positions[j][1] = -0.2; 
+    }
+
+    for (let j = 0; j < numMetaBalls; j++) {
+      this.metaBallPos.push(positions[j]);
     }
   }
 
@@ -94,9 +104,9 @@ class Spine {
   }
 
   animate(time: number) {
-    for (let i = 1; i < this.metaBallPos.length; i += 3) {
-      this.metaBallPos[i] += 0.01* Math.sin(time * 0.5 + 0.3 * i);
-    }
+    // for (let i = 1; i < this.metaBallPos.length; i += 3) {
+    //   this.metaBallPos[i] += 0.01* Math.sin(time * 0.5 + 0.3 * i);
+    // }
   }
 };
 

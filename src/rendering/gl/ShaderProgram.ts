@@ -24,10 +24,6 @@ class ShaderProgram {
   attrPos: number;
 
   unifView: WebGLUniformLocation;
-  unifEye: WebGLUniformLocation;
-  unifUp: WebGLUniformLocation;
-  unifRight: WebGLUniformLocation;
-  unifForward: WebGLUniformLocation;
 
   unifResolution: WebGLUniformLocation;
 
@@ -35,10 +31,9 @@ class ShaderProgram {
 
   unifSpineLocations: WebGLUniformLocation;
   unifSpineRadii: WebGLUniformLocation;
-  unifJointNumber: WebGLUniformLocation;
   unifLimbJointLocations: WebGLUniformLocation;
   unifLimbJointRadii: WebGLUniformLocation;
-  unifLimbJointIDs: WebGLUniformLocation;
+  unifLimbLengths: WebGLUniformLocation;
   unifHead: WebGLUniformLocation;
 
   unifTestMat: WebGLUniformLocation;
@@ -70,10 +65,10 @@ class ShaderProgram {
     this.unifSpineLocations = gl.getUniformLocation(this.prog, "u_SpineLoc");
     this.unifSpineRadii = gl.getUniformLocation(this.prog, "u_SpineRad");
     this.unifHead = gl.getUniformLocation(this.prog, "u_Head");
-    this.unifLimbJointIDs = gl.getUniformLocation(this.prog, "u_JointID");
+    this.unifLimbLengths = gl.getUniformLocation(this.prog, "u_LimbLengths");
     this.unifLimbJointLocations = gl.getUniformLocation(this.prog, "u_JointLoc");
     this.unifLimbJointRadii = gl.getUniformLocation(this.prog, "u_JointRad");
-    this.unifJointNumber = gl.getUniformLocation(this.prog, "u_jointNum");
+    //this.unifJointNumber = gl.getUniformLocation(this.prog, "u_jointNum");
 
     this.unifTestMat = gl.getUniformLocation(this.prog, "u_TestMat");
     this.unifRotations = gl.getUniformLocation(this.prog, "u_Rotations");
@@ -83,34 +78,6 @@ class ShaderProgram {
     if (activeProgram !== this.prog) {
       gl.useProgram(this.prog);
       activeProgram = this.prog;
-    }
-  }
-
-  setEye(eye: vec3) {
-    this.use();
-    if (this.unifEye !== -1) {
-      gl.uniform3fv(this.unifEye, eye);
-    }
-  }
-
-  setUp(up: vec3) {
-    this.use();
-    if (this.unifUp !== -1) {
-      gl.uniform3fv(this.unifUp, up);
-    }
-  }
-
-  setRight(right: vec3) {
-    this.use();
-    if (this.unifRight !== -1) {
-      gl.uniform3fv(this.unifRight, right);
-    }
-  }
-
-  setForward(forward: vec3) {
-    this.use();
-    if (this.unifForward !== -1) {
-      gl.uniform3fv(this.unifForward, forward);
     }
   }
 
@@ -172,17 +139,10 @@ class ShaderProgram {
     }
   }
 
-  setJointIDs(radii : number[]) {
+  setLimbLengths(lengths : number[]) {
     this.use();
-    if(this.unifLimbJointIDs !== -1) {
-      gl.uniform1fv(this.unifLimbJointIDs, radii);
-    }
-  }
-
-  setJointNumber(num : number) {
-    this.use();
-    if(this.unifJointNumber !== -1) {
-      gl.uniform1i(this.unifJointNumber, num);
+    if(this.unifLimbLengths !== -1) {
+      gl.uniform1iv(this.unifLimbLengths, lengths);
     }
   }
 
