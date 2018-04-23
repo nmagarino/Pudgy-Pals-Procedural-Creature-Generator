@@ -37,10 +37,11 @@ class Creature {
     this.head.generate(this.spineLocations, this.spine.metaBallRadii);
 
     //Leg generation and parsing
-    let numLegs = Math.pow(Math.random(), 3) * 4;
+    let numLegs = Math.pow(Math.random(), 2.4) * 4;
     for (let i = 0; i < numLegs; i++) {
       let leg1 = new Limb(true);
-      let spineIndex = Math.floor(Math.random() * this.spine.metaBallPos.length);
+      let offset = Math.random() * this.spine.metaBallPos.length/numLegs;
+      let spineIndex = Math.max(Math.min(Math.floor(i * this.spine.metaBallPos.length/numLegs + offset), this.spine.metaBallPos.length - 1), 0);
       let startPos = this.spine.metaBallPos[spineIndex];
       startPos[2] += this.spine.metaBallRadii[spineIndex]/2 + 0.1;
       leg1.generate(startPos, this.spine.metaBallRadii[spineIndex] * 0.7);

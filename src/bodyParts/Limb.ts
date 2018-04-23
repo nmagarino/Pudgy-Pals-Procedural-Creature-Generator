@@ -15,16 +15,16 @@ class Limb {
     let numJoints = Math.floor(Math.random() * 3. + 2.);
 
     let radius = (Math.random() * 2 - 1) * 0.1 + startRadius;
-    if (radius > 0.4) radius = 0.4;
-    if (radius < 0.1) radius = 0.1;
+    if (radius > 0.3) radius = 0.3;
+    if (radius < 0.05) radius = 0.05;
     
     this.jointPos.push(startPos);
     this.jointRadii.push(radius);
 
     for (let i = 1; i < numJoints; i++) {
-      let yaw = (Math.random()) * Math.PI * 0.8;
+      let yaw = (Math.random()) * Math.PI * 0.8 + Math.PI;
       let pitch = (Math.random() * 2 - 1) * Math.PI * 0.35;
-      let r = Math.random() * 0.5 + 0.2 + this.jointRadii[i-1]/2;
+      let r = this.jointRadii[i-1]/0.2 * (Math.random() * 0.5 + 0.2 + this.jointRadii[i-1]/2);
 
       let dx = r * Math.sin(pitch) * Math.cos(yaw);
       let dy = r * Math.cos(pitch);
@@ -33,9 +33,11 @@ class Limb {
       if (this.isLeg && i + 1 >= numJoints) {
         newPos[1] = 0;
       }
+      if (newPos[2] < 0.05) newPos[2] = 0.1;
+      if (newPos[1] > -0.1) newPos[1] = -0.1;
       this.jointPos.push(newPos);
       radius += (Math.random() * 2 - 1) * 0.15 - 0.1;
-      if (radius > 0.4) radius = 0.4;
+      if (radius > 0.3) radius = 0.3;
       if (radius < 0.1) radius = 0.1;
       this.jointRadii.push(radius);
     }

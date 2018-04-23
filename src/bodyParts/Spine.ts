@@ -98,7 +98,7 @@ class Spine {
   randomizeSpline() {
     let numSplinePoints = 4;
     for (let i = 0; i < numSplinePoints; i++) {
-      let newPoint = vec3.fromValues(0.8 * i + 0.3 * Math.random(), 1. * (2 * Math.random() - 1), 0);
+      let newPoint = vec3.fromValues(0.5 * i + 0.3 * Math.random(), 1. * (2 * Math.random() - 1), 0);
       this.splinePoints.push(newPoint);
     }
   }
