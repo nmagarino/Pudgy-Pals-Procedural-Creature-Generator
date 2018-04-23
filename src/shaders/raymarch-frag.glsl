@@ -25,6 +25,9 @@ uniform float u_JointLoc[50]; //size is  numbe of joints * 3
 uniform float u_JointRad[50]; //size is number of joints
 //pass in number of joints...
 
+uniform mat4 u_TestMat;
+uniform mat4[100] u_Rotations;
+
 
 float headType;
 
@@ -198,15 +201,24 @@ float trollHeadSDF(vec3 p) {
 //~~~~HAND/FEET SDFs~~~~~//
 
 // For now, size is based on head size, but later make it the average joint size
-float clawHandSDF(vec3 p) {
-	float base = udRoundBox(p, u_Head[3] * vec3(.3,.3,.1), .03);
-	float fingees = sdCappedCone(p + u_Head[3] * vec3(-0.65,-0.7,1.1), u_Head[3] * vec3(1.0,1.0,1.0));
-	float combine = min(base, fingees);
-	return sdConeSection(p, .1, .2,.1);
+float clawFootSDF(vec3 p) {
+	float base = udRoundBox(p, u_Head[3] * vec3(.6,.6,.3), .08);
+	float fingees = sdConeSection((p + u_Head[3] * vec3(0.5,-0.9,0.3)) * rotateMatZ(-20.0), u_Head[3] * 1.0, u_Head[3] * .3, u_Head[3] * .05);
+	fingees = min(fingees, sdConeSection((p + u_Head[3] * vec3(-0.5,-0.9,0.3)) * rotateMatZ(20.0), u_Head[3] * 1.0, u_Head[3] * .3, u_Head[3] * .05));
+    fingees = min(fingees, sdConeSection(p + u_Head[3] * vec3(0.0,-1.1,0.3), u_Head[3] * 1.0, u_Head[3] * .3, u_Head[3] * .05));
+	float combine = smin(base, fingees, .13);
+	return combine;
+}
+
+float handSDF(vec3 p) {
+	float base = udRoundBox(p, u_Head[3] * vec3(.6,.6,.2), .08);
+	return base;
 }
 
 
 float armSDF(vec3 p) {
+
+	int countSegs = 0;
 
 	float allLimbs = MAX_DIST;
 	int incr = 0;
@@ -230,23 +242,25 @@ float armSDF(vec3 p) {
 
 	// for 3 * (jointNum(per limb) - 1), each joint until last one
 	float segments = MAX_DIST;
+	
 	for(int i = j; i < (j+((count-1) * 3)); i = i + 3) {
 		vec3 point0 = vec3(u_JointLoc[i], u_JointLoc[i+1], u_JointLoc[i+2]);
 	    vec3 point1 = vec3(u_JointLoc[i+3], u_JointLoc[i+4] ,u_JointLoc[i+5]);
 		vec3 midpoint = vec3((point0.x + point1.x)/2.0, (point0.y + point1.y)/2.0, (point0.z + point1.z)/2.0);
 		float len = distance(point0, point1);
-		vec3 dir = point1 - point0;
-		vec3 up = vec3(0.0,1.0,0.0);
-		float angle = acos((dir.x*up.x + dir.y*up.y + dir.z*up.z)/(length(dir)*length(up)));
-		angle = angle * (180.0/3.14159);
+		
+		vec3 dir = point1 - point0; //dir is correct
+		
+		
 
-		// Essentially reverses rotation angle based on the location of the next joint
-		float flip = -1.0;
-		if((point0.x - point1.x) < 0.0) {
-			flip *= -1.0;
-		}
+		mat4 outMat4 = u_Rotations[countSegs];
+		countSegs++;
 
-		float part = sdConeSection((p + midpoint) * rotateMatZ(flip * angle), len/2.0, u_JointRad[(i+3)/3],u_JointRad[i/3]);
+		vec3 q = (inverse(outMat4) * vec4((p + midpoint),1.0)).xyz;
+
+
+
+		float part = sdConeSection(q, len/2.0, u_JointRad[(i+3)/3],u_JointRad[i/3]);
 		segments = min(segments, part);
 	}
 
@@ -285,8 +299,10 @@ float sceneSDF(vec3 p) {
 	else if(u_Head[4] == 2.0){
 		headType = trollHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
 	}
-	return smin(spineSDF(p), headType, 0.08);
+	return min(smin(spineSDF(p), headType, 0.08), armSDF(p));
 	//return armSDF(p);
+	//return clawFootSDF(p  * rotateMatY(180.0) * rotateMatX(90.0));
+	//return handSDF(p);
 }
 
 //~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//

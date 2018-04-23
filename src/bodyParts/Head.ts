@@ -41,7 +41,7 @@ class Head {
     if(rand < .33) {
         this.headData.push(0.0);
     }
-    else if(rand < .66) {
+    else if(.33 < rand && rand < .66) {
         this.headData.push(1.0);
     }
     else {

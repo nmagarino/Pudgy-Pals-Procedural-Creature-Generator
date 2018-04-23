@@ -1,4 +1,4 @@
-import {vec3, vec2} from 'gl-matrix';
+import {vec3, vec2, quat, mat4} from 'gl-matrix';
 import * as Stats from 'stats-js';
 import * as DAT from 'dat-gui';
 import Square from './geometry/Square';
@@ -78,20 +78,24 @@ function main() {
     raymarchShader.setSpineLocations(creature.spine.metaBallPos);
     raymarchShader.setSpineRadii(creature.spine.metaBallRadii);
     raymarchShader.setHead(creature.head.headData);
-    raymarchShader.setJointLocations([
+
+    let locations : Array<number> = [
       .3, 0.0, 0.0,
-      -0.1, -0.2, 0.0,
+      -0.1, -0.2, 0.9,
       0.2, -0.3, 0.0,
 
       -.3, 0.0, 0.0,
       0.1, 0.2, 0.0,
       -0.2, 0.3, 0.0,
-      -0.2, 0.5,0.0
+      -0.1, 0.5,0.0
 
-    ]);
-    raymarchShader.setJointIDs([
+    ];
+
+    raymarchShader.setJointLocations(locations);
+    let numJointsEach : Array<number> = [
       3.0, 4.0
-    ]);
+    ];
+    raymarchShader.setJointIDs(numJointsEach);
     raymarchShader.setJointRadii([
       0.1,
       0.08,
@@ -103,7 +107,38 @@ function main() {
       0.01
     ]);
     raymarchShader.setJointNumber(7);
-    
+
+    let rotations : mat4[] = [];
+    let start : number = 0;
+    //need to do separately for each limb
+    for(let k: number = 0; k < numJointsEach.length; k++) {
+      //for as many joints in each limb
+      for(let l : number = 0; l < numJointsEach[k] - 1; l++) {
+
+        let a : vec3 = vec3.fromValues(0.0,1.0,0.0);
+        let b : vec3 = vec3.create();
+        let point0 : vec3 = vec3.fromValues(locations[start],locations[start + 1],locations[start + 2]);
+        let point1 : vec3 = vec3.fromValues(locations[start + 3],locations[start + 4],locations[start + 5]);
+        b = vec3.subtract(b, point1, point0);
+        b = vec3.normalize(b, b);
+        let q: quat;
+        q = quat.create();
+        q = quat.rotationTo(q, a, b);
+        let m4: mat4 = mat4.create();
+        m4 = mat4.fromQuat(m4, q);
+        rotations.push(m4);
+
+        start = start + 3;
+
+      }
+      start = start + 3;
+
+    }
+
+
+    raymarchShader.setRotations(rotations);
+
+
     raymarchShader.setResolution(vec2.fromValues(window.innerWidth, window.innerHeight));
     raymarchShader.setTime(time);
     raymarchShader.setViewMatrix(camera.viewMatrix);

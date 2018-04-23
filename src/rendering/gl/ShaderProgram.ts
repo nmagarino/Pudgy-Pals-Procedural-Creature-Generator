@@ -41,6 +41,9 @@ class ShaderProgram {
   unifLimbJointIDs: WebGLUniformLocation;
   unifHead: WebGLUniformLocation;
 
+  unifTestMat: WebGLUniformLocation;
+  unifRotations: WebGLUniformLocation;
+
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
 
@@ -71,6 +74,9 @@ class ShaderProgram {
     this.unifLimbJointLocations = gl.getUniformLocation(this.prog, "u_JointLoc");
     this.unifLimbJointRadii = gl.getUniformLocation(this.prog, "u_JointRad");
     this.unifJointNumber = gl.getUniformLocation(this.prog, "u_jointNum");
+
+    this.unifTestMat = gl.getUniformLocation(this.prog, "u_TestMat");
+    this.unifRotations = gl.getUniformLocation(this.prog, "u_Rotations");
   }
 
   use() {
@@ -177,6 +183,40 @@ class ShaderProgram {
     this.use();
     if(this.unifJointNumber !== -1) {
       gl.uniform1i(this.unifJointNumber, num);
+    }
+  }
+
+  setTestMatrix(test: mat4) {
+    this.use();
+    if (this.unifTestMat !== -1) {
+      gl.uniformMatrix4fv(this.unifTestMat, false, test);
+    }
+  }
+
+  setRotations(rotations: mat4[]) {
+    let numbers : number[] = [];
+    for(let i : number = 0; i < rotations.length; i++) {
+      let m4 : mat4 = rotations[i];
+      numbers.push(m4[0]);
+      numbers.push(m4[1]);
+      numbers.push(m4[2]);
+      numbers.push(m4[3]);
+      numbers.push(m4[4]);
+      numbers.push(m4[5]);
+      numbers.push(m4[6]);
+      numbers.push(m4[7]);
+      numbers.push(m4[8]);
+      numbers.push(m4[9]);
+      numbers.push(m4[10]);
+      numbers.push(m4[11]);
+      numbers.push(m4[12]);
+      numbers.push(m4[13]);
+      numbers.push(m4[14]);
+      numbers.push(m4[15]);
+    }
+    this.use();
+    if (this.unifRotations !== -1) {
+      gl.uniformMatrix4fv(this.unifRotations, false, numbers);
     }
   }
 
