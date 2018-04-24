@@ -17,6 +17,7 @@ uniform float u_SpineLoc[24];
 uniform float u_SpineRad[8];
 
 uniform float u_Head[5]; // indices 0-2 are positions, 3 is radius
+uniform float u_AppenData[50];
 
 uniform int u_LimbLengths[8];  //size is number of limbs
 uniform float u_JointLoc[90]; //size is number of joints * 3
@@ -201,8 +202,33 @@ float clawFootSDF(vec3 p) {
 	float fingees = sdConeSection((p + u_Head[3] * vec3(0.5,-0.9,0.3)) * rotateMatZ(-20.0), u_Head[3] * 1.0, u_Head[3] * .3, u_Head[3] * .05);
 	fingees = min(fingees, sdConeSection((p + u_Head[3] * vec3(-0.5,-0.9,0.3)) * rotateMatZ(20.0), u_Head[3] * 1.0, u_Head[3] * .3, u_Head[3] * .05));
     fingees = min(fingees, sdConeSection(p + u_Head[3] * vec3(0.0,-1.1,0.3), u_Head[3] * 1.0, u_Head[3] * .3, u_Head[3] * .05));
-	float combine = smin(base, fingees, .13);
+	float combine = smin(base, fingees, .13); // final foot
 	return combine;
+}
+
+float appendagesSDF(vec3 p) {
+	float all = MAX_DIST;
+	float angle;
+	//angle to slightly offset each foot
+	float angle1 = -35.0;
+	float angle2 = 35.0;
+
+	for(int i = 0; i < int(u_AppenData[0]); i++) {
+		int start = (i * 3) + 1;
+		vec3 offset = vec3(u_AppenData[start], u_AppenData[start + 1], u_AppenData[start + 2]);
+
+		if((i % 2) == 0) {
+			angle = angle1;
+		}
+		else {
+			angle = angle2;
+		}
+
+		float foot = clawFootSDF((p + offset)*rotateMatZ(90.0) * rotateMatY(90.0) * rotateMatZ(angle));
+		all = min(all, foot);
+	}
+
+	return all;
 }
 
 float handSDF(vec3 p) {
@@ -223,6 +249,7 @@ float armSDF(vec3 p) {
 		jointNum += u_LimbLengths[i];
 	}
 
+	//this is for each limb
 	for(int j = 0; j < (jointNum*3); j = j + incr) {
 	numLimbs++;
 		
@@ -230,6 +257,7 @@ float armSDF(vec3 p) {
 	
 	// NEED joint number to do the below operations...
 	
+	//count is number of joints in this limb
 	count = int(u_LimbLengths[numLimbs - 1]);	
 
 	float arm = MAX_DIST;
@@ -264,7 +292,7 @@ float armSDF(vec3 p) {
 		segments = min(segments, part);
 	}
 
-	float combine = min(arm, segments); // this is one arm
+	float combine = smin(arm, segments, .1); // this is one arm
 	allLimbs = min(allLimbs, combine); //merge with all other limbs
 
 	incr = count * 3;
@@ -299,9 +327,10 @@ float sceneSDF(vec3 p) {
 	else if(u_Head[4] == 2.0){
 		headType = trollHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
 	}
-	float dist = smin(spineSDF(p), headType, 0.08);
-	dist = smin(dist, armSDF(p), 0.08);
-	return dist;
+	float dist = smin(spineSDF(p), headType, .1);
+	return smin(smin(armSDF(p), appendagesSDF(p), .2), dist, .1);
+	
+	//return appendagesSDF(p);
 }
 
 //~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//

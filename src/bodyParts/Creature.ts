@@ -2,6 +2,7 @@ import Spine from './Spine';
 import Head from './Head';
 import Limb from './Limb';
 import {vec2, vec3} from 'gl-matrix';
+import Appendage from './Appendage';
 
 class Creature {
   spine: Spine;
@@ -11,6 +12,7 @@ class Creature {
   jointLocations: number[];
   jointRadii: number[];
   limbLengths: number[];
+  appendages: Appendage;
 
   constructor() {
   }
@@ -25,6 +27,8 @@ class Creature {
     this.jointRadii = [];
     this.limbLengths = [];
 
+    this.appendages = new Appendage();
+
     this.spine.generate();
     for (let i = 0; i < this.spine.metaBallPos.length; i++) {
       let spinePos = this.spine.metaBallPos[i];
@@ -35,6 +39,8 @@ class Creature {
 
     // Head takes information from the spine that is made previously
     this.head.generate(this.spineLocations, this.spine.metaBallRadii);
+
+    this.appendages.generate(this.limbLengths, this.jointLocations);
 
     //Leg generation and parsing
     let numLegs = Math.pow(Math.random(), 2.4) * 4;

@@ -73,11 +73,14 @@ function main() {
     // TODO: get / calculate relevant uniforms to send to shader here
     // TODO: send uniforms to shader
 
+    
     creature.animate(time);
 
     raymarchShader.setSpineLocations(creature.spineLocations);
     raymarchShader.setSpineRadii(creature.spine.metaBallRadii);
     raymarchShader.setHead(creature.head.headData);
+    raymarchShader.setAppenData(creature.appendages.appendageData);
+    
 
     let locations : Array<number> = creature.jointLocations;
     raymarchShader.setJointLocations(locations);
@@ -86,6 +89,10 @@ function main() {
     raymarchShader.setLimbLengths(numJointsEach);
     
     raymarchShader.setJointRadii(creature.jointRadii);
+
+    creature.appendages.generate(numJointsEach, locations);
+    console.log(creature.appendages.appendageData);
+
     //raymarchShader.setJointNumber(7);
 
     let rotations : mat4[] = [];

@@ -39,6 +39,8 @@ class ShaderProgram {
   unifTestMat: WebGLUniformLocation;
   unifRotations: WebGLUniformLocation;
 
+  unifAppenData: WebGLUniformLocation;
+
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
 
@@ -68,10 +70,11 @@ class ShaderProgram {
     this.unifLimbLengths = gl.getUniformLocation(this.prog, "u_LimbLengths");
     this.unifLimbJointLocations = gl.getUniformLocation(this.prog, "u_JointLoc");
     this.unifLimbJointRadii = gl.getUniformLocation(this.prog, "u_JointRad");
-    //this.unifJointNumber = gl.getUniformLocation(this.prog, "u_jointNum");
 
     this.unifTestMat = gl.getUniformLocation(this.prog, "u_TestMat");
     this.unifRotations = gl.getUniformLocation(this.prog, "u_Rotations");
+
+    this.unifAppenData = gl.getUniformLocation(this.prog, "u_AppenData");
   }
 
   use() {
@@ -177,6 +180,13 @@ class ShaderProgram {
     this.use();
     if (this.unifRotations !== -1) {
       gl.uniformMatrix4fv(this.unifRotations, false, numbers);
+    }
+  }
+
+  setAppenData(data : number[]) {
+    this.use();
+    if(this.unifAppenData !== -1) {
+      gl.uniform1fv(this.unifAppenData, data);
     }
   }
 
