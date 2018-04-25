@@ -8,10 +8,6 @@ out vec4 out_Col;
 uniform vec2 u_Resolution;
 uniform float u_Time;
 uniform mat4 u_View;
-uniform vec3 u_Eye;
-uniform vec3 u_Up;
-uniform vec3 u_Right;
-uniform vec3 u_Forward;
 
 uniform float u_SpineLoc[24];
 uniform float u_SpineRad[8];
@@ -23,6 +19,9 @@ uniform int u_LimbLengths[8];  //size is number of limbs
 uniform float u_JointLoc[90]; //size is number of joints * 3
 uniform float u_JointRad[30]; //size is number of joints
 
+uniform vec3 u_Color1;
+uniform vec3 u_Color2;
+
 uniform mat4[100] u_Rotations;
 
 float headType;
@@ -31,7 +30,6 @@ const int MAX_STEPS = 300;
 const float MIN_DIST = 0.0001;
 const float MAX_DIST = 100.0;
 const float EPSILON = 0.002;
-
 
 
 mat3 rotateMatX(float angle) {
@@ -401,13 +399,16 @@ void main() {
 
 	// Colors geometry with Lambert Shader
 	 vec3 p = eye + distance * dir;
+	 vec3 norm = normalize(normal(p));
 	 vec3 lightVec = vec3(17.0,40.0,50.0) - p;
-	 float diffuseTerm = dot(normalize(normal(p)), normalize(lightVec));
+	 float alpha = dot(norm, vec3(0, 1, 0));
+	 vec3 color = mix(u_Color1, u_Color2, alpha);
+	 float diffuseTerm = dot(norm, normalize(lightVec));
 	 diffuseTerm = clamp(diffuseTerm, 0.0, 1.0);
 	 float ambientTerm = 0.2;
 	 float lightIntensity = diffuseTerm + ambientTerm;
 
-	 out_Col = vec4(vec3(1.0,0.0,0.0) * lightIntensity, 1.0) ;
+	 out_Col = vec4(color * lightIntensity, 1.0) ;
 
 	//  out_Col = vec4(0.5 * (dir + vec3(1,1,1)), 1.);
 }

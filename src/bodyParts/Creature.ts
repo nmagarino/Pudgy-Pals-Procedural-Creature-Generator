@@ -13,11 +13,16 @@ class Creature {
   jointRadii: number[];
   limbLengths: number[];
   appendages: Appendage;
+  color1: vec3;
+  color2: vec3;
 
   constructor() {
   }
 
   generate() {
+    this.color1 = vec3.fromValues(Math.random(), Math.random(), Math.random());
+    this.color2 = vec3.fromValues(Math.random(), Math.random(), Math.random());
+
     this.spine = new Spine();
     this.spineLocations = [];
     this.head = new Head();
@@ -43,7 +48,7 @@ class Creature {
     this.appendages.generate(this.limbLengths, this.jointLocations);
 
     //Leg generation and parsing
-    let numLimbs = Math.pow(Math.random(), 1.7) * 4;
+    let numLimbs = Math.pow(Math.random(), 1.7) * 3;
     let generatingArms = false;
     for (let i = 0; i < numLimbs; i++) {
       let limb1 = new Limb(!generatingArms);

@@ -35,6 +35,8 @@ class ShaderProgram {
   unifLimbJointRadii: WebGLUniformLocation;
   unifLimbLengths: WebGLUniformLocation;
   unifHead: WebGLUniformLocation;
+  unifBodyColor1: WebGLUniformLocation;
+  unifBodyColor2: WebGLUniformLocation;
 
   unifTestMat: WebGLUniformLocation;
   unifRotations: WebGLUniformLocation;
@@ -70,6 +72,8 @@ class ShaderProgram {
     this.unifLimbLengths = gl.getUniformLocation(this.prog, "u_LimbLengths");
     this.unifLimbJointLocations = gl.getUniformLocation(this.prog, "u_JointLoc");
     this.unifLimbJointRadii = gl.getUniformLocation(this.prog, "u_JointRad");
+    this.unifBodyColor1 = gl.getUniformLocation(this.prog, "u_Color1");
+    this.unifBodyColor2 = gl.getUniformLocation(this.prog, "u_Color2");
 
     this.unifTestMat = gl.getUniformLocation(this.prog, "u_TestMat");
     this.unifRotations = gl.getUniformLocation(this.prog, "u_Rotations");
@@ -146,6 +150,16 @@ class ShaderProgram {
     this.use();
     if(this.unifLimbLengths !== -1) {
       gl.uniform1iv(this.unifLimbLengths, lengths);
+    }
+  }
+
+  setColors(color1: vec3, color2: vec3) {
+    this.use();
+    if (this.unifBodyColor1 !== -1) {
+      gl.uniform3fv(this.unifBodyColor1, color1);
+    }
+    if (this.unifBodyColor2 !== -1) {
+      gl.uniform3fv(this.unifBodyColor2, color2);
     }
   }
 

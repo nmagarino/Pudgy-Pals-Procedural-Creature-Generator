@@ -90,8 +90,12 @@ function main() {
     
     raymarchShader.setJointRadii(creature.jointRadii);
 
+    raymarchShader.setColors(
+      creature.color1,
+      creature.color2
+                            );
+
     creature.appendages.generate(numJointsEach, locations);
-    console.log(creature.appendages.appendageData);
 
     //raymarchShader.setJointNumber(7);
 
