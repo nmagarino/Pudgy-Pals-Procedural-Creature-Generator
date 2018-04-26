@@ -21,6 +21,8 @@ uniform float u_JointRad[30]; //size is number of joints
 
 uniform vec3 u_Color1;
 uniform vec3 u_Color2;
+uniform vec3 u_Color3;
+uniform vec3 u_Color4;
 
 uniform mat4[100] u_Rotations;
 
@@ -31,6 +33,11 @@ const float MIN_DIST = 0.0001;
 const float MAX_DIST = 100.0;
 const float EPSILON = 0.002;
 
+uniform sampler2D tex_Color1;
+uniform sampler2D tex_Color2;
+
+vec3 eyePos;
+float eyeSize;
 
 mat3 rotateMatX(float angle) {
 	float rad = radians(angle);
@@ -371,7 +378,14 @@ mat4 viewMatrix(vec3 eye, vec3 center, vec3 up) {
         vec4(-f, 0.0),
         vec4(0.0, 0.0, 0.0, 1)
     );
-} 
+}
+
+vec3 triplanar(sampler2D tex, float scale, vec3 norm, vec3 pos) {
+	vec3 xy = texture(tex, pos.xy * scale).rgb;
+	vec3 xz = texture(tex, pos.xz * scale).rgb;
+	vec3 yz = texture(tex, pos.yz * scale).rgb;
+	return mix(mix(xz, yz, norm.x), xy, norm.z);
+}
 
 void main() {
 	vec3 eye = -u_View[3].xyz;
@@ -394,6 +408,7 @@ void main() {
 		vec4 col1 = vec4(0.0,0.0,1.0,1.0);
 		vec4 col2 = vec4(0.0,1.0,0.0,1.0);
 		out_Col = vec4(col1 * (gl_FragCoord.y / u_Resolution.y)) + vec4(col2 * (2.4 - (gl_FragCoord.y / u_Resolution.y)));
+		//out_Col = texture(tex_Color, gl_FragCoord.xy/u_Resolution);
 		return;
 	}
 
@@ -402,7 +417,12 @@ void main() {
 	 vec3 norm = normalize(normal(p));
 	 vec3 lightVec = vec3(17.0,40.0,50.0) - p;
 	 float alpha = dot(norm, vec3(0, 1, 0));
-	 vec3 color = mix(u_Color1, u_Color2, alpha);
+	 if (alpha < 0.) alpha = 0.;
+	 vec3 texture1 = triplanar(tex_Color1, 1., norm, p);
+	 texture1 = mix(u_Color1, u_Color2, texture1.r);
+	 vec3 texture2 = triplanar(tex_Color2, 1., norm, p);
+	 texture2 = mix(u_Color3, u_Color4, texture2.r);
+	 vec3 color = mix(texture1, texture2, alpha);
 	 float diffuseTerm = dot(norm, normalize(lightVec));
 	 diffuseTerm = clamp(diffuseTerm, 0.0, 1.0);
 	 float ambientTerm = 0.2;

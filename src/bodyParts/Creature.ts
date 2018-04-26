@@ -13,15 +13,23 @@ class Creature {
   jointRadii: number[];
   limbLengths: number[];
   appendages: Appendage;
+  texture1: number;
+  texture2: number;
   color1: vec3;
   color2: vec3;
+  color3: vec3;
+  color4: vec3;
 
   constructor() {
   }
 
-  generate() {
+  generate(numTextures: number) {
+    this.texture1 = Math.floor(Math.random() * numTextures);
+    this.texture2 = Math.floor(Math.random() * numTextures);
     this.color1 = vec3.fromValues(Math.random(), Math.random(), Math.random());
     this.color2 = vec3.fromValues(Math.random(), Math.random(), Math.random());
+    this.color3 = vec3.fromValues(Math.random(), Math.random(), Math.random());
+    this.color4 = vec3.fromValues(Math.random(), Math.random(), Math.random());
 
     this.spine = new Spine();
     this.spineLocations = [];
@@ -48,7 +56,7 @@ class Creature {
     this.appendages.generate(this.limbLengths, this.jointLocations);
 
     //Leg generation and parsing
-    let numLimbs = Math.pow(Math.random(), 1.7) * 3;
+    let numLimbs = Math.pow(Math.random(), 1.7) * 2 + 1;
     let generatingArms = false;
     for (let i = 0; i < numLimbs; i++) {
       let limb1 = new Limb(!generatingArms);
