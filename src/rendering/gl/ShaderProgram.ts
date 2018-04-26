@@ -1,6 +1,7 @@
 import {vec2, vec3, vec4, mat4} from 'gl-matrix';
 import Drawable from './Drawable';
 import {gl} from '../../globals';
+import Texture from './Texture';
 
 var activeProgram: WebGLProgram = null;
 
@@ -35,11 +36,17 @@ class ShaderProgram {
   unifLimbJointRadii: WebGLUniformLocation;
   unifLimbLengths: WebGLUniformLocation;
   unifHead: WebGLUniformLocation;
+  unifBodyColor1: WebGLUniformLocation;
+  unifBodyColor2: WebGLUniformLocation;
+  unifBodyColor3: WebGLUniformLocation;
+  unifBodyColor4: WebGLUniformLocation;
 
   unifTestMat: WebGLUniformLocation;
   unifRotations: WebGLUniformLocation;
 
   unifAppenData: WebGLUniformLocation;
+
+  unifTexUnits: Map<string, WebGLUniformLocation>;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -70,11 +77,40 @@ class ShaderProgram {
     this.unifLimbLengths = gl.getUniformLocation(this.prog, "u_LimbLengths");
     this.unifLimbJointLocations = gl.getUniformLocation(this.prog, "u_JointLoc");
     this.unifLimbJointRadii = gl.getUniformLocation(this.prog, "u_JointRad");
+    this.unifBodyColor1 = gl.getUniformLocation(this.prog, "u_Color1");
+    this.unifBodyColor2 = gl.getUniformLocation(this.prog, "u_Color2");
+    this.unifBodyColor3 = gl.getUniformLocation(this.prog, "u_Color3");
+    this.unifBodyColor4 = gl.getUniformLocation(this.prog, "u_Color4");
 
     this.unifTestMat = gl.getUniformLocation(this.prog, "u_TestMat");
     this.unifRotations = gl.getUniformLocation(this.prog, "u_Rotations");
 
     this.unifAppenData = gl.getUniformLocation(this.prog, "u_AppenData");
+
+    this.unifTexUnits = new Map<string, WebGLUniformLocation>();
+  }
+
+  setupTexUnits(handleNames: Array<string>) {
+    for (let handle of handleNames) {
+      var location = gl.getUniformLocation(this.prog, handle);
+      if (location !== -1) {
+        this.unifTexUnits.set(handle, location);
+      } else {
+        console.log("Could not find handle for texture named: \'" + handle + "\'!");
+      }
+    }
+  }
+
+  bindTexToUnit(handleName: string, tex: Texture, unit: number) {
+    this.use();
+    var location = this.unifTexUnits.get(handleName);
+    if (location !== undefined) {
+      gl.activeTexture(gl.TEXTURE0 + unit);
+      tex.bindTex();
+      gl.uniform1i(location, unit);
+    } else {
+      console.log("Texture with handle name: \'" + handleName + "\' was not found");
+    }
   }
 
   use() {
@@ -146,6 +182,22 @@ class ShaderProgram {
     this.use();
     if(this.unifLimbLengths !== -1) {
       gl.uniform1iv(this.unifLimbLengths, lengths);
+    }
+  }
+
+  setColors(color1: vec3, color2: vec3, color3: vec3, color4: vec3) {
+    this.use();
+    if (this.unifBodyColor1 !== -1) {
+      gl.uniform3fv(this.unifBodyColor1, color1);
+    }
+    if (this.unifBodyColor2 !== -1) {
+      gl.uniform3fv(this.unifBodyColor2, color2);
+    }
+    if (this.unifBodyColor2 !== -1) {
+      gl.uniform3fv(this.unifBodyColor3, color3);
+    }
+    if (this.unifBodyColor2 !== -1) {
+      gl.uniform3fv(this.unifBodyColor4, color4);
     }
   }
 

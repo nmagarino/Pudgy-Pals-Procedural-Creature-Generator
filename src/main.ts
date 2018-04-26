@@ -6,16 +6,34 @@ import Camera from './Camera';
 import {setGL} from './globals';
 import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
 import Creature from './bodyParts/Creature';
+import Texture from './rendering/gl/Texture';
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
-const controls = {
-  // TODO: add any controls you want
-};
 
 let screenQuad: Square;
 let time : number = 0;
 let creature : Creature = new Creature();
+let textures: Texture[];
+
+let raymarchShader: ShaderProgram;
+
+const controls = {
+  'Generate': generate
+};
+
+function generate() {
+  raymarchShader.setSpineLocations([]);
+  raymarchShader.setSpineRadii([]);
+  raymarchShader.setHead([]);
+  raymarchShader.setAppenData([]);
+  raymarchShader.setJointLocations([]);
+  raymarchShader.setLimbLengths([]);
+  raymarchShader.setJointRadii([]);
+  raymarchShader.setRotations([]);
+  creature = new Creature();
+  creature.generate(textures.length);
+}
 
 function main() {
   // Initial display for framerate
@@ -28,7 +46,7 @@ function main() {
 
   // TODO: add any controls you need to the gui
   const gui = new DAT.GUI();
-  // E.G. gui.add(controls, 'tesselations', 0, 8).step(1);
+  gui.add(controls, 'Generate');
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement> document.getElementById('canvas');
@@ -46,6 +64,15 @@ function main() {
   // Later, we can import `gl` from `globals.ts` to access it
   setGL(gl);
 
+  //Load Textures
+  textures = [];
+  textures.push(new Texture('/resources/textures/noise.bmp'));
+  textures.push(new Texture('/resources/textures/fleshy.bmp'));  
+  textures.push(new Texture('/resources/textures/furry.bmp'));  
+  textures.push(new Texture('/resources/textures/scaly1.bmp'));  
+  textures.push(new Texture('/resources/textures/scaly2.bmp'));  
+  textures.push(new Texture('/resources/textures/veiny.bmp'));
+
   screenQuad = new Square(vec3.fromValues(0, 0, 0));
   screenQuad.create();
 
@@ -56,23 +83,28 @@ function main() {
   gl.clearColor(0.0, 0.0, 0.0, 1);
   gl.disable(gl.DEPTH_TEST);
 
-  const raymarchShader = new ShaderProgram([
+  raymarchShader = new ShaderProgram([
     new Shader(gl.VERTEX_SHADER, require('./shaders/screenspace-vert.glsl')),
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/raymarch-frag.glsl')),
   ]);
 
-  creature.generate(); // Pass in parameters for whole creature in GUI
+  raymarchShader.setupTexUnits(["tex_Color1"]);
+  raymarchShader.setupTexUnits(["tex_Color2"]);
+
+  creature.generate(textures.length); // Pass in parameters for whole creature in GUI
   // This function will be called every frame
   function tick() {
     camera.update();
     stats.begin();
+
+    raymarchShader.bindTexToUnit("tex_Color1", textures[creature.texture1], 0);
+    raymarchShader.bindTexToUnit("tex_Color2", textures[creature.texture2], 1);
 
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // TODO: get / calculate relevant uniforms to send to shader here
     // TODO: send uniforms to shader
-
     
     creature.animate(time);
 
@@ -90,8 +122,18 @@ function main() {
     
     raymarchShader.setJointRadii(creature.jointRadii);
 
+    raymarchShader.setColors(
+      creature.color1,
+      creature.color2,
+      creature.color3,
+      creature.color4
+                            );
+
     creature.appendages.generate(numJointsEach, locations);
+<<<<<<< HEAD
     //console.log(creature.appendages.appendageData);
+=======
+>>>>>>> e51aaebd922a2fa60dbed244aab2f08fafd4b969
 
     //raymarchShader.setJointNumber(7);
 
