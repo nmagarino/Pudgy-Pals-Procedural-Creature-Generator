@@ -91,7 +91,7 @@ function main() {
     raymarchShader.setJointRadii(creature.jointRadii);
 
     creature.appendages.generate(numJointsEach, locations);
-    console.log(creature.appendages.appendageData);
+    //console.log(creature.appendages.appendageData);
 
     //raymarchShader.setJointNumber(7);
 
@@ -106,6 +106,9 @@ function main() {
         let b : vec3 = vec3.create();
         let point0 : vec3 = vec3.fromValues(locations[start],locations[start + 1],locations[start + 2]);
         let point1 : vec3 = vec3.fromValues(locations[start + 3],locations[start + 4],locations[start + 5]);
+        if(l == numJointsEach[k] - 2) {
+          console.log(locations[start + 1]);
+        }
         b = vec3.subtract(b, point1, point0);
         b = vec3.normalize(b, b);
         let q: quat;

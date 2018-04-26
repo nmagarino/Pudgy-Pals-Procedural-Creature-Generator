@@ -206,6 +206,19 @@ float clawFootSDF(vec3 p) {
 	return combine;
 }
 
+
+float handSDF(vec3 p) {
+	float size = u_Head[3] / 1.5;
+	float base = udRoundBox(p, size * vec3(.6,.6,.2), .08);
+	float fingee1 = sdConeSection((p + size * vec3(1.1,-0.7,0.0)) * rotateMatZ(-30.0), size * 1.0, size * .5, size * .2);
+	float fingee2 = sdConeSection((p + size * vec3(0.45,-1.9,0.0)) * rotateMatZ(0.0), size * 1.0, size * .5, size * .2);
+	float fingee3 = sdConeSection((p + size * vec3(-0.45,-1.9,0.0)) * rotateMatZ(0.0), size * 1.0, size * .5, size * .2);
+	fingee1 = min(fingee1, fingee2);
+	fingee1 = min(fingee1, fingee3);
+	float combine = smin(base, fingee1, .09);
+	return combine;
+}
+
 float appendagesSDF(vec3 p) {
 	float all = MAX_DIST;
 	float angle;
@@ -223,19 +236,18 @@ float appendagesSDF(vec3 p) {
 		else {
 			angle = angle2;
 		}
-
-		float foot = clawFootSDF((p + offset)*rotateMatZ(90.0) * rotateMatY(90.0) * rotateMatZ(angle));
+		float foot;
+		if((p + offset).y != 0.0) { //should be 0, but does this work
+			foot = handSDF((p + offset) * rotateMatZ(135.0));
+		}
+		else {
+			foot = clawFootSDF((p + offset)*rotateMatZ(90.0) * rotateMatY(90.0) * rotateMatZ(angle));
+		}
 		all = min(all, foot);
 	}
 
 	return all;
 }
-
-float handSDF(vec3 p) {
-	float base = udRoundBox(p, u_Head[3] * vec3(.6,.6,.2), .08);
-	return base;
-}
-
 
 float armSDF(vec3 p) {
 
@@ -292,7 +304,7 @@ float armSDF(vec3 p) {
 		segments = min(segments, part);
 	}
 
-	float combine = smin(arm, segments, .1); // this is one arm
+	float combine = smin(arm, segments, .2); // this is one arm
 	allLimbs = min(allLimbs, combine); //merge with all other limbs
 
 	incr = count * 3;
@@ -328,9 +340,9 @@ float sceneSDF(vec3 p) {
 		headType = trollHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
 	}
 	float dist = smin(spineSDF(p), headType, .1);
-	return smin(smin(armSDF(p), appendagesSDF(p), .2), dist, .1);
+	//return smin(smin(armSDF(p), appendagesSDF(p), .2), dist, .1);
 	
-	//return appendagesSDF(p);
+	return handSDF(p * rotateMatZ(135.0));
 }
 
 //~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
