@@ -79,6 +79,7 @@ class Creature {
     }
 
     for (let i = 0; i < this.limbs.length; i++) {
+      
       let leg = this.limbs[i];
       this.limbLengths.push(leg.jointPos.length);
       for (let j = 0; j < leg.jointPos.length; j++) {

@@ -9,6 +9,14 @@ class Limb {
     this.isLeg = isLeg;
     this.jointPos = [];
     this.jointRadii = [];
+    // if(isLeg) {
+    //   console.log("LEggy");
+    // }
+    // else {
+    //   // once arm, will stay arm
+    //   console.log("Army");
+    // }
+    //console.log("hey");
   }
 
   generate(startPos: vec3, startRadius: number) {
@@ -31,7 +39,7 @@ class Limb {
       let dz = r * Math.sin(pitch) * Math.sin(yaw);
       let newPos = vec3.add(vec3.create(), this.jointPos[i-1], vec3.fromValues(dx, dy, dz));
       if (this.isLeg && i + 1 >= numJoints) {
-        newPos[1] = 0;
+        newPos[1] = 0.0;
       }
       if (newPos[2] < 0.05) newPos[2] = 0.1;
       if (newPos[1] > -0.1) newPos[1] = -0.1;

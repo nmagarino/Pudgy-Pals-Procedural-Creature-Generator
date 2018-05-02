@@ -43,10 +43,15 @@ class ShaderProgram {
 
   unifTestMat: WebGLUniformLocation;
   unifRotations: WebGLUniformLocation;
+  unifAppenRots: WebGLUniformLocation;
+  unifAppenRad: WebGLUniformLocation;
 
   unifAppenData: WebGLUniformLocation;
+  unifAppenBools: WebGLUniformLocation;
 
   unifTexUnits: Map<string, WebGLUniformLocation>;
+
+   
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -84,10 +89,16 @@ class ShaderProgram {
 
     this.unifTestMat = gl.getUniformLocation(this.prog, "u_TestMat");
     this.unifRotations = gl.getUniformLocation(this.prog, "u_Rotations");
+    this.unifAppenRots = gl.getUniformLocation(this.prog, "u_AppenRots");
+    this.unifAppenRad = gl.getUniformLocation(this.prog, "u_AppenRad")
 
     this.unifAppenData = gl.getUniformLocation(this.prog, "u_AppenData");
+    this.unifAppenBools = gl.getUniformLocation(this.prog, "u_AppenBools")
 
     this.unifTexUnits = new Map<string, WebGLUniformLocation>();
+
+    
+
   }
 
   setupTexUnits(handleNames: Array<string>) {
@@ -235,12 +246,55 @@ class ShaderProgram {
     }
   }
 
+  setAppenRotations(rotations: mat4[]) {
+    let numbers : number[] = [];
+    for(let i : number = 0; i < rotations.length; i++) {
+      let m4 : mat4 = rotations[i];
+      numbers.push(m4[0]);
+      numbers.push(m4[1]);
+      numbers.push(m4[2]);
+      numbers.push(m4[3]);
+      numbers.push(m4[4]);
+      numbers.push(m4[5]);
+      numbers.push(m4[6]);
+      numbers.push(m4[7]);
+      numbers.push(m4[8]);
+      numbers.push(m4[9]);
+      numbers.push(m4[10]);
+      numbers.push(m4[11]);
+      numbers.push(m4[12]);
+      numbers.push(m4[13]);
+      numbers.push(m4[14]);
+      numbers.push(m4[15]);
+    }
+    this.use();
+    if (this.unifRotations !== -1) {
+      gl.uniformMatrix4fv(this.unifAppenRots, false, numbers);
+    }
+  }
+
   setAppenData(data : number[]) {
     this.use();
     if(this.unifAppenData !== -1) {
       gl.uniform1fv(this.unifAppenData, data);
     }
   }
+
+  setAppenBools(data : number[]) {
+    this.use();
+    if(this.unifAppenBools !== -1) {
+      console.log("In ShaderProg: " + data);
+      gl.uniform1iv(this.unifAppenBools, data);
+    }
+  }
+
+  setAppenRad(data : number[]) {
+    this.use();
+    if(this.unifAppenRad !== -1) {
+      gl.uniform1fv(this.unifAppenRad, data);
+    }
+  }
+
 
   // TODO: add functions to modify uniforms
 

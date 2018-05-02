@@ -1,10 +1,10 @@
-import {vec3, vec2, quat, mat4} from 'gl-matrix';
+import { vec3, vec2, quat, mat4 } from 'gl-matrix';
 import * as Stats from 'stats-js';
 import * as DAT from 'dat-gui';
 import Square from './geometry/Square';
 import Camera from './Camera';
-import {setGL} from './globals';
-import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
+import { setGL } from './globals';
+import ShaderProgram, { Shader } from './rendering/gl/ShaderProgram';
 import Creature from './bodyParts/Creature';
 import Texture from './rendering/gl/Texture';
 
@@ -12,8 +12,8 @@ import Texture from './rendering/gl/Texture';
 // This will be referred to by dat.GUI's functions that add GUI elements.
 
 let screenQuad: Square;
-let time : number = 0;
-let creature : Creature = new Creature();
+let time: number = 0;
+let creature: Creature = new Creature();
 let textures: Texture[];
 
 let raymarchShader: ShaderProgram;
@@ -49,14 +49,14 @@ function main() {
   gui.add(controls, 'Generate');
 
   // get canvas and webgl context
-  const canvas = <HTMLCanvasElement> document.getElementById('canvas');
+  const canvas = <HTMLCanvasElement>document.getElementById('canvas');
 
   function setSize(width: number, height: number) {
     canvas.width = width;
     canvas.height = height;
   }
 
-  const gl = <WebGL2RenderingContext> canvas.getContext('webgl2');
+  const gl = <WebGL2RenderingContext>canvas.getContext('webgl2');
   if (!gl) {
     alert('WebGL 2 not supported!');
   }
@@ -67,10 +67,10 @@ function main() {
   //Load Textures
   textures = [];
   textures.push(new Texture('/resources/textures/noise.bmp'));
-  textures.push(new Texture('/resources/textures/fleshy.bmp'));  
-  textures.push(new Texture('/resources/textures/furry.bmp'));  
-  textures.push(new Texture('/resources/textures/scaly1.bmp'));  
-  textures.push(new Texture('/resources/textures/scaly2.bmp'));  
+  textures.push(new Texture('/resources/textures/fleshy.bmp'));
+  textures.push(new Texture('/resources/textures/furry.bmp'));
+  textures.push(new Texture('/resources/textures/scaly1.bmp'));
+  textures.push(new Texture('/resources/textures/scaly2.bmp'));
   textures.push(new Texture('/resources/textures/veiny.bmp'));
 
   screenQuad = new Square(vec3.fromValues(0, 0, 0));
@@ -92,6 +92,29 @@ function main() {
   raymarchShader.setupTexUnits(["tex_Color2"]);
 
   creature.generate(textures.length); // Pass in parameters for whole creature in GUI
+  // pass in arms vs. legs data
+  let appenBools: Array<number> = []; // 0 will be foot, 1 will be hand
+    let armsNow: boolean = false;
+    for (let i: number = 0; i < creature.limbs.length; i++) {
+      if (armsNow) {
+        appenBools.push(1);
+        console.log("hand");
+        continue;
+      }
+      if (creature.limbs[i].isLeg) {
+        appenBools.push(0);
+        console.log("foot");
+      }
+      else {
+        armsNow = true;
+        appenBools.push(1);
+        console.log("hand");
+      }
+    }
+    console.log(appenBools);
+    raymarchShader.setAppenBools(appenBools);
+
+
   // This function will be called every frame
   function tick() {
     camera.update();
@@ -105,52 +128,57 @@ function main() {
 
     // TODO: get / calculate relevant uniforms to send to shader here
     // TODO: send uniforms to shader
-    
+
     creature.animate(time);
 
     raymarchShader.setSpineLocations(creature.spineLocations);
     raymarchShader.setSpineRadii(creature.spine.metaBallRadii);
     raymarchShader.setHead(creature.head.headData);
     raymarchShader.setAppenData(creature.appendages.appendageData);
-    
 
-    let locations : Array<number> = creature.jointLocations;
+
+
+
+    let locations: Array<number> = creature.jointLocations;
     raymarchShader.setJointLocations(locations);
 
-    let numJointsEach : Array<number> = creature.limbLengths;
+    let numJointsEach: Array<number> = creature.limbLengths;
     raymarchShader.setLimbLengths(numJointsEach);
-    
-    raymarchShader.setJointRadii(creature.jointRadii);
+
+    let radiis: Array<number> = creature.jointRadii;
+    raymarchShader.setJointRadii(radiis);
 
     raymarchShader.setColors(
       creature.color1,
       creature.color2,
       creature.color3,
       creature.color4
-                            );
+    );
+
+
+
+    
 
     creature.appendages.generate(numJointsEach, locations);
-<<<<<<< HEAD
+    //raymarchShader.setAppenBools(appenBools);
     //console.log(creature.appendages.appendageData);
-=======
->>>>>>> e51aaebd922a2fa60dbed244aab2f08fafd4b969
 
     //raymarchShader.setJointNumber(7);
 
-    let rotations : mat4[] = [];
-    let start : number = 0;
+    let rotations: mat4[] = [];
+    let finalRots: mat4[] = [];
+    let finalRadii: number[] = [];
+    let start: number = 0;
     //need to do separately for each limb
-    for(let k: number = 0; k < numJointsEach.length; k++) {
+    for (let k: number = 0; k < numJointsEach.length; k++) {
       //for as many joints in each limb
-      for(let l : number = 0; l < numJointsEach[k] - 1; l++) {
+      for (let l: number = 0; l < numJointsEach[k] - 1; l++) {
 
-        let a : vec3 = vec3.fromValues(0.0,1.0,0.0);
-        let b : vec3 = vec3.create();
-        let point0 : vec3 = vec3.fromValues(locations[start],locations[start + 1],locations[start + 2]);
-        let point1 : vec3 = vec3.fromValues(locations[start + 3],locations[start + 4],locations[start + 5]);
-        if(l == numJointsEach[k] - 2) {
-          console.log(locations[start + 1]);
-        }
+        let a: vec3 = vec3.fromValues(0.0, 1.0, 0.0);
+        let b: vec3 = vec3.create();
+        let point0: vec3 = vec3.fromValues(locations[start], locations[start + 1], locations[start + 2]);
+        let point1: vec3 = vec3.fromValues(locations[start + 3], locations[start + 4], locations[start + 5]);
+         
         b = vec3.subtract(b, point1, point0);
         b = vec3.normalize(b, b);
         let q: quat;
@@ -159,6 +187,12 @@ function main() {
         let m4: mat4 = mat4.create();
         m4 = mat4.fromQuat(m4, q);
         rotations.push(m4);
+        if(l == numJointsEach[k] - 2) {
+          //console.log(locations[start + 1]);
+          finalRots.push(m4);
+          finalRadii.push(radiis[start / 3]);
+      
+       }
 
         start = start + 3;
 
@@ -168,7 +202,10 @@ function main() {
     }
 
 
+
     raymarchShader.setRotations(rotations);
+    raymarchShader.setAppenRotations(finalRots);
+    raymarchShader.setAppenRad(finalRadii);
 
 
     raymarchShader.setResolution(vec2.fromValues(window.innerWidth, window.innerHeight));
@@ -188,7 +225,7 @@ function main() {
     requestAnimationFrame(tick);
   }
 
-  window.addEventListener('resize', function() {
+  window.addEventListener('resize', function () {
     setSize(window.innerWidth, window.innerHeight);
     camera.setAspectRatio(window.innerWidth / window.innerHeight);
     camera.updateProjectionMatrix();

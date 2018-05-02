@@ -14,6 +14,8 @@ uniform float u_SpineRad[8];
 
 uniform float u_Head[5]; // indices 0-2 are positions, 3 is radius
 uniform float u_AppenData[50];
+uniform int u_AppenBools[50];
+uniform float u_AppenRad[50];
 
 uniform int u_LimbLengths[8];  //size is number of limbs
 uniform float u_JointLoc[90]; //size is number of joints * 3
@@ -25,6 +27,7 @@ uniform vec3 u_Color3;
 uniform vec3 u_Color4;
 
 uniform mat4[100] u_Rotations;
+uniform mat4[50] u_AppenRots;
 
 float headType;
 
@@ -38,6 +41,9 @@ uniform sampler2D tex_Color2;
 
 vec3 eyePos;
 float eyeSize;
+
+int numAppen = 0; // for appendages
+int armsNow = 0; // 0 for false, 1 for true
 
 mat3 rotateMatX(float angle) {
 	float rad = radians(angle);
@@ -202,18 +208,20 @@ float trollHeadSDF(vec3 p) {
 //~~~~HAND/FEET SDFs~~~~~//
 
 // For now, size is based on head size, but later make it the average joint size
-float clawFootSDF(vec3 p) {
-	float base = udRoundBox(p, u_Head[3] * vec3(.6,.6,.3), .08);
-	float fingees = sdConeSection((p + u_Head[3] * vec3(0.5,-0.9,0.3)) * rotateMatZ(-20.0), u_Head[3] * 1.0, u_Head[3] * .3, u_Head[3] * .05);
-	fingees = min(fingees, sdConeSection((p + u_Head[3] * vec3(-0.5,-0.9,0.3)) * rotateMatZ(20.0), u_Head[3] * 1.0, u_Head[3] * .3, u_Head[3] * .05));
-    fingees = min(fingees, sdConeSection(p + u_Head[3] * vec3(0.0,-1.1,0.3), u_Head[3] * 1.0, u_Head[3] * .3, u_Head[3] * .05));
+float clawFootSDF(vec3 p, float size) {
+	size = size * 2.0;
+	float base = udRoundBox(p, size * vec3(.6,.6,.3), .001);
+	float fingees = sdConeSection((p + size * vec3(0.5,-0.9,0.3)) * rotateMatZ(-20.0), size * 1.0, size * .3, size * .05);
+	fingees = min(fingees, sdConeSection((p + size * vec3(-0.5,-0.9,0.3)) * rotateMatZ(20.0), size * 1.0, size * .3, size * .05));
+    fingees = min(fingees, sdConeSection(p + size * vec3(0.0,-1.1,0.3), size * 1.0, size * .3, size * .05));
 	float combine = smin(base, fingees, .13); // final foot
 	return combine;
 }
 
 
-float handSDF(vec3 p) {
-	float size = u_Head[3] / 1.5;
+float handSDF(vec3 p, float size) {
+	//float size = u_Head[3] / 1.5;
+	//size = 1.0;
 	float base = udRoundBox(p, size * vec3(.6,.6,.2), .08);
 	float fingee1 = sdConeSection((p + size * vec3(1.1,-0.7,0.0)) * rotateMatZ(-30.0), size * 1.0, size * .5, size * .2);
 	float fingee2 = sdConeSection((p + size * vec3(0.45,-1.9,0.0)) * rotateMatZ(0.0), size * 1.0, size * .5, size * .2);
@@ -231,6 +239,9 @@ float appendagesSDF(vec3 p) {
 	float angle1 = -35.0;
 	float angle2 = 35.0;
 
+	armsNow = 0;
+	numAppen = 0;
+
 	for(int i = 0; i < int(u_AppenData[0]); i++) {
 		int start = (i * 3) + 1;
 		vec3 offset = vec3(u_AppenData[start], u_AppenData[start + 1], u_AppenData[start + 2]);
@@ -242,12 +253,38 @@ float appendagesSDF(vec3 p) {
 			angle = angle2;
 		}
 		float foot;
-		if((p + offset).y != 0.0) { //should be 0, but does this work
-			foot = handSDF((p + offset) * rotateMatZ(135.0));
+
+		if(u_AppenBools[numAppen] == 1) {
+		armsNow = 1;
+		}
+
+		if(armsNow == 0) {
+			foot = clawFootSDF((p + offset)*rotateMatZ(90.0) * rotateMatY(90.0) * rotateMatZ(angle), u_AppenRad[numAppen]);
 		}
 		else {
-			foot = clawFootSDF((p + offset)*rotateMatZ(90.0) * rotateMatY(90.0) * rotateMatZ(angle));
+			vec3 q = (inverse(u_AppenRots[numAppen]) * vec4((p + offset),1.0)).xyz;
+			foot = handSDF(q* rotateMatZ(180.0),u_AppenRad[numAppen]);
 		}
+
+		// //if(u_AppenBools[numAppen] != 0.0) {
+		// if((numAppen % 2) == 0) {
+		// 	foot = clawFootSDF((p + offset)*rotateMatZ(90.0) * rotateMatY(90.0) * rotateMatZ(angle));		
+		// }
+		// else {
+		// 	foot = handSDF((p + offset) * rotateMatZ(135.0));
+		// }
+		// else if(u_AppenBools[2] == 0){			
+		// 	
+		// }
+
+		numAppen = numAppen + 1;
+
+		// if((p + offset).y == 100.0) { //should be 0, but does this work
+		// 	foot = handSDF((p + offset) * rotateMatZ(135.0));
+		// }
+		// else {
+		// 	foot = clawFootSDF((p + offset)*rotateMatZ(90.0) * rotateMatY(90.0) * rotateMatZ(angle));
+		// }
 		all = min(all, foot);
 	}
 
@@ -345,9 +382,9 @@ float sceneSDF(vec3 p) {
 		headType = trollHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));
 	}
 	float dist = smin(spineSDF(p), headType, .1);
-	//return smin(smin(armSDF(p), appendagesSDF(p), .2), dist, .1);
+	return smin(smin(armSDF(p), appendagesSDF(p), .2), dist, .1);
 	
-	return handSDF(p * rotateMatZ(135.0));
+	//return min(handSDF(p+ vec3(-1.0,0.0,0.0), u_AppenRad[0]), clawFootSDF(p + vec3(1.0,0.0,0.0), u_AppenRad[0]));
 }
 
 //~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
