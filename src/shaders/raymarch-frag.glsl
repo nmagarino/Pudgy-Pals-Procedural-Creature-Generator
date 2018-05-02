@@ -42,8 +42,8 @@ uniform sampler2D tex_Color2;
 vec3 eyePos;
 float eyeSize;
 
-int numAppen = 0; // for appendages
-int armsNow = 0; // 0 for false, 1 for true
+// int numAppen = 0; // for appendages
+// int armsNow = 0; // 0 for false, 1 for true
 
 mat3 rotateMatX(float angle) {
 	float rad = radians(angle);
@@ -239,8 +239,8 @@ float appendagesSDF(vec3 p) {
 	float angle1 = -35.0;
 	float angle2 = 35.0;
 
-	armsNow = 0;
-	numAppen = 0;
+	int armsNow = 0;
+	int numAppen = 0;
 
 	for(int i = 0; i < int(u_AppenData[0]); i++) {
 		int start = (i * 3) + 1;

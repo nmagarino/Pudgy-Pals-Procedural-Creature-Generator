@@ -23,14 +23,19 @@ const controls = {
 };
 
 function generate() {
-  raymarchShader.setSpineLocations([]);
-  raymarchShader.setSpineRadii([]);
-  raymarchShader.setHead([]);
-  raymarchShader.setAppenData([]);
-  raymarchShader.setJointLocations([]);
-  raymarchShader.setLimbLengths([]);
-  raymarchShader.setJointRadii([]);
-  raymarchShader.setRotations([]);
+  let bigEmptyArray : Array<number> = new Array(100);
+  bigEmptyArray.fill(0);
+  raymarchShader.setSpineLocations(bigEmptyArray);
+  raymarchShader.setSpineRadii(bigEmptyArray);
+  raymarchShader.setHead(bigEmptyArray);
+  raymarchShader.setAppenData(bigEmptyArray);
+  raymarchShader.setJointLocations(bigEmptyArray);
+  raymarchShader.setLimbLengths(bigEmptyArray);
+  raymarchShader.setJointRadii(bigEmptyArray);
+  raymarchShader.setRotations([]); // mat4's
+  raymarchShader.setAppenData(bigEmptyArray);
+  raymarchShader.setAppenRad(bigEmptyArray);
+  raymarchShader.setAppenRotations([]) // mat4's
   creature = new Creature();
   creature.generate(textures.length);
 }
