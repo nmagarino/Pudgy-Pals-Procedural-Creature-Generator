@@ -1,5 +1,7 @@
 # CIS-566 Final Project
 
+# Final Write-Up
+
 # Midpoint Milestone
  
 So far we've basically met all of our milestones, finishing the spine class by week 1 and making progress on the limb class during week 2.  We've constructed our code from Nick's base code from the Implicit Surfaces homework (HW2).  
