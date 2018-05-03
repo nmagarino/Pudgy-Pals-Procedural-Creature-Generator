@@ -3370,20 +3370,16 @@ function generate() {
     for (let i = 0; i < creature.limbs.length; i++) {
         if (armsNow) {
             appenBools.push(1);
-            console.log("hand");
             continue;
         }
         if (creature.limbs[i].isLeg) {
             appenBools.push(0);
-            console.log("foot");
         }
         else {
             armsNow = true;
             appenBools.push(1);
-            console.log("hand");
         }
     }
-    console.log(appenBools);
     raymarchShader.setAppenBools(appenBools);
 }
 function main() {
@@ -3454,20 +3450,16 @@ function main() {
     for (let i = 0; i < creature.limbs.length; i++) {
         if (armsNow) {
             appenBools.push(1);
-            console.log("hand");
             continue;
         }
         if (creature.limbs[i].isLeg) {
             appenBools.push(0);
-            console.log("foot");
         }
         else {
             armsNow = true;
             appenBools.push(1);
-            console.log("hand");
         }
     }
-    console.log(appenBools);
     raymarchShader.setAppenBools(appenBools);
     // This function will be called every frame
     function tick() {
@@ -15416,7 +15408,6 @@ class ShaderProgram {
     setAppenBools(data) {
         this.use();
         if (this.unifAppenBools !== -1) {
-            console.log("In ShaderProg: " + data);
             __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1iv(this.unifAppenBools, data);
         }
     }
@@ -15669,7 +15660,6 @@ class Head {
             sum += spineRadii[i];
         }
         avg = sum / spineRadii.length;
-        console.log(avg);
         this.headData.push(avg);
         if (type == -1) {
             let rand = Math.random();
@@ -15728,6 +15718,8 @@ class Limb {
         for (let i = 1; i < numJoints; i++) {
             let yaw = (Math.random()) * Math.PI * 0.8 + Math.PI;
             let pitch = (Math.random() * 2 - 1) * Math.PI * 0.35;
+            if (!this.isLeg)
+                pitch -= 0.5;
             let r = this.jointRadii[i - 1] / 0.2 * (Math.random() * 0.5 + 0.2 + this.jointRadii[i - 1] / 2);
             let dx = r * Math.sin(pitch) * Math.cos(yaw);
             let dy = r * Math.cos(pitch);
