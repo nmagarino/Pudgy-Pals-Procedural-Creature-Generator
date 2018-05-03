@@ -4,7 +4,7 @@
 
 LIVE DEMO: https://nmagarino.github.io/cis566---Final-Project/ 
 
-(Note: setting numSetsLimbs to 0 will randomly select the number of limbs)
+(Note: setting numLimbSets to 0 will randomly select the number of limbs)
 
 We've implemented a fairly robust creature creation system.  A creature can have up to 4 pairs of procedurally generated limbs, one of 3 head types (that can be chosen specifically or randomized), and a randomly generated spine of 8 metaballs.  The creatures are also randomly colored by selecting 4 random colors and 2 of an assortment of textures.  The entire creature is an assortment of raymarched SDF primitives.
 
