@@ -26,6 +26,18 @@ Hands and Feet are hard coded SDFs that are placed at the position of the final 
 
 The creature generator selects 2 grayscale surface textures and generates 4 random colors. In the shader, after the normal of the creature at a point is determined, we use triplanar mapping to seamlessly map both textures in 3D space. Both textures are then used as an alpha to blend between 2 of the 4 colors. This results in 2 randomly colored textures that can be applied to the creature accross its surface. To add interest, we use the absolute value of the dot product of the surface normal of the creature to blend between textures such that one texture appears on upward-facing surfaces on the creature.
 
+> ISSUES
+
+Infrequently, a raymarching error occurs where a primitive is smoothed too intensely resulting in comprehensible geometry.  Due to the infrequent nature of this bug, debugging of this issue has proven difficult.  
+
+Occasionally, limbs clearly collide with one another. A fix for this would require a complex bounding-box system in our creature generation function.
+
+There are some visual artifacts on smaller SDFs, such as the cone-shaped teeth of two of the head types.  
+
+> EXAMPLE CREATURES
+
+Here are some of our favorite creatures that we created!
+
 # Midpoint Milestone
  
 So far we've basically met all of our milestones, finishing the spine class by week 1 and making progress on the limb class during week 2.  We've constructed our code from Nick's base code from the Implicit Surfaces homework (HW2).  
