@@ -14,12 +14,19 @@ import Texture from './rendering/gl/Texture';
 let screenQuad: Square;
 let time: number = 0;
 let creature: Creature = new Creature();
+
+let headType: number = -1; // -1, 0, 1, 2
+let numLimbSets: number = 0; // 0 and 1-4
+
+
 let textures: Texture[];
 
 let raymarchShader: ShaderProgram;
 
 const controls = {
-  'Generate': generate
+  'Generate': generate,
+  numLimbSets: 0,
+  headType: 'random'
 };
 
 function generate() {
@@ -36,8 +43,46 @@ function generate() {
   raymarchShader.setAppenData(bigEmptyArray);
   raymarchShader.setAppenRad(bigEmptyArray);
   raymarchShader.setAppenRotations([]) // mat4's
+  //bigEmptyArray = new Array(100);
+  // bigEmptyArray.fill(1);
+  // raymarchShader.setAppenBools(bigEmptyArray);
+
+  
+
+
   creature = new Creature();
-  creature.generate(textures.length);
+  switch(controls.headType) {
+    case 'random': headType = -1;
+                   break;
+    case 'BUGG': headType = 0;
+                 break;
+    case 'DINO': headType = 1;
+                 break;
+    case 'TROLLE': headType = 2;
+                   break;
+  }
+  creature.generate(textures.length, controls.numLimbSets, headType);
+
+  let appenBools: Array<number> = []; // 0 will be foot, 1 will be hand
+    let armsNow: boolean = false;
+    for (let i: number = 0; i < creature.limbs.length; i++) {
+      if (armsNow) {
+        appenBools.push(1);
+        console.log("hand");
+        continue;
+      }
+      if (creature.limbs[i].isLeg) {
+        appenBools.push(0);
+        console.log("foot");
+      }
+      else {
+        armsNow = true;
+        appenBools.push(1);
+        console.log("hand");
+      }
+    }
+    console.log(appenBools);
+    raymarchShader.setAppenBools(appenBools);
 }
 
 function main() {
@@ -52,6 +97,8 @@ function main() {
   // TODO: add any controls you need to the gui
   const gui = new DAT.GUI();
   gui.add(controls, 'Generate');
+  gui.add(controls, 'numLimbSets', 0, 4).step(1);
+  gui.add(controls, 'headType', ['random', 'BUGG', 'DINO', 'TROLLE']);
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement>document.getElementById('canvas');
@@ -96,7 +143,18 @@ function main() {
   raymarchShader.setupTexUnits(["tex_Color1"]);
   raymarchShader.setupTexUnits(["tex_Color2"]);
 
-  creature.generate(textures.length); // Pass in parameters for whole creature in GUI
+
+  switch(controls.headType) {
+    case 'random': headType = -1;
+                   break;
+    case 'BUGG': headType = 0;
+                 break;
+    case 'DINO': headType = 1;
+                 break;
+    case 'TROLLE': headType = 2;
+                   break;
+  }
+  creature.generate(textures.length, controls.numLimbSets, headType); // Pass in parameters for whole creature in GUI
   // pass in arms vs. legs data
   let appenBools: Array<number> = []; // 0 will be foot, 1 will be hand
     let armsNow: boolean = false;
@@ -140,6 +198,7 @@ function main() {
     raymarchShader.setSpineRadii(creature.spine.metaBallRadii);
     raymarchShader.setHead(creature.head.headData);
     raymarchShader.setAppenData(creature.appendages.appendageData);
+    
 
 
 

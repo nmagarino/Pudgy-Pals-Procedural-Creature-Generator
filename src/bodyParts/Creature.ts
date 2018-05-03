@@ -2,7 +2,7 @@ import Spine from './Spine';
 import Head from './Head';
 import Limb from './Limb';
 import {vec2, vec3} from 'gl-matrix';
-import Appendage from './Appendage';
+import Appendages from './Appendage';
 
 class Creature {
   spine: Spine;
@@ -12,7 +12,7 @@ class Creature {
   jointLocations: number[];
   jointRadii: number[];
   limbLengths: number[];
-  appendages: Appendage;
+  appendages: Appendages;
   texture1: number;
   texture2: number;
   color1: vec3;
@@ -23,7 +23,7 @@ class Creature {
   constructor() {
   }
 
-  generate(numTextures: number) {
+  generate(numTextures: number, numLimbSets: number, headType: number) {
     this.texture1 = Math.floor(Math.random() * numTextures);
     this.texture2 = Math.floor(Math.random() * numTextures);
     this.color1 = vec3.fromValues(Math.random(), Math.random(), Math.random());
@@ -40,7 +40,8 @@ class Creature {
     this.jointRadii = [];
     this.limbLengths = [];
 
-    this.appendages = new Appendage();
+
+    this.appendages = new Appendages();
 
     this.spine.generate();
     for (let i = 0; i < this.spine.metaBallPos.length; i++) {
@@ -51,12 +52,19 @@ class Creature {
     }
 
     // Head takes information from the spine that is made previously
-    this.head.generate(this.spineLocations, this.spine.metaBallRadii);
+    this.head.generate(this.spineLocations, this.spine.metaBallRadii, headType);
 
     this.appendages.generate(this.limbLengths, this.jointLocations);
 
     //Leg generation and parsing
-    let numLimbs = Math.pow(Math.random(), 1.7) * 2 + 1;
+    let numLimbs : number;
+    if(numLimbSets == 0) {
+      numLimbs = Math.pow(Math.random(), 1.7) * 2 + 1;
+    }
+    else {
+      numLimbs = numLimbSets;
+    }
+    
     let generatingArms = false;
     for (let i = 0; i < numLimbs; i++) {
       let limb1 = new Limb(!generatingArms);

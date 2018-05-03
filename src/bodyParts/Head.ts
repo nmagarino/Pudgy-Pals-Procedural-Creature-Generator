@@ -7,7 +7,7 @@ class Head {
   constructor() {
   }
 
-  generate(spinePos: number[], spineRadii: number[]) {
+  generate(spinePos: number[], spineRadii: number[], type: number) {
     this.headData = [];
 
     let firstPos: number[] = [];
@@ -36,7 +36,8 @@ class Head {
     console.log(avg);
 
     this.headData.push(avg);
-
+    
+    if(type == -1) {
     let rand :number = Math.random();
     if(rand < .33) {
         this.headData.push(0.0);
@@ -46,6 +47,10 @@ class Head {
     }
     else {
         this.headData.push(2.0);
+    }
+    }
+    else {
+        this.headData.push(type);
     }
   }
 
