@@ -2,6 +2,14 @@
 
 # Final Write-Up
 
+LIVE DEMO: https://nmagarino.github.io/cis566---Final-Project/ 
+
+We've implemented a fairly robust creature creation system.  A creature can have up to 4 pairs of procedurally generated limbs, one of 3 head types (that can be chosen specifically or randomized), and a randomly generated spine of 8 metaballs.  The creatures are also randomly colored by selecting 4 random colors and 2 of an assortment of textures.  
+
+> SPINE
+
+> HEAD
+
 # Midpoint Milestone
  
 So far we've basically met all of our milestones, finishing the spine class by week 1 and making progress on the limb class during week 2.  We've constructed our code from Nick's base code from the Implicit Surfaces homework (HW2).  
