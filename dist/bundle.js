@@ -159,10 +159,10 @@ function equals(a, b) {
 /* unused harmony reexport mat2d */
 /* unused harmony reexport mat3 */
 /* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "a", function() { return __WEBPACK_IMPORTED_MODULE_4__gl_matrix_mat4__; });
-/* unused harmony reexport quat */
-/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "b", function() { return __WEBPACK_IMPORTED_MODULE_6__gl_matrix_vec2__; });
-/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "c", function() { return __WEBPACK_IMPORTED_MODULE_7__gl_matrix_vec3__; });
-/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "d", function() { return __WEBPACK_IMPORTED_MODULE_8__gl_matrix_vec4__; });
+/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "b", function() { return __WEBPACK_IMPORTED_MODULE_5__gl_matrix_quat__; });
+/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "c", function() { return __WEBPACK_IMPORTED_MODULE_6__gl_matrix_vec2__; });
+/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "d", function() { return __WEBPACK_IMPORTED_MODULE_7__gl_matrix_vec3__; });
+/* harmony reexport (module object) */ __webpack_require__.d(__webpack_exports__, "e", function() { return __WEBPACK_IMPORTED_MODULE_8__gl_matrix_vec4__; });
 /**
  * @fileoverview gl-matrix - High performance matrix and vector operations
  * @author Brandon Jones
@@ -3308,6 +3308,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__globals__ = __webpack_require__(2);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__rendering_gl_ShaderProgram__ = __webpack_require__(63);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__bodyParts_Creature__ = __webpack_require__(64);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__ = __webpack_require__(69);
+
 
 
 
@@ -3318,10 +3320,72 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
-const controls = {};
 let screenQuad;
 let time = 0;
 let creature = new __WEBPACK_IMPORTED_MODULE_7__bodyParts_Creature__["a" /* default */]();
+let headType = -1; // -1, 0, 1, 2
+let numLimbSets = 0; // 0 and 1-4
+let textures;
+let raymarchShader;
+const controls = {
+    'Generate': generate,
+    numLimbSets: 0,
+    headType: 'random'
+};
+function generate() {
+    let bigEmptyArray = new Array(100);
+    bigEmptyArray.fill(0);
+    raymarchShader.setSpineLocations(bigEmptyArray);
+    raymarchShader.setSpineRadii(bigEmptyArray);
+    raymarchShader.setHead(bigEmptyArray);
+    raymarchShader.setAppenData(bigEmptyArray);
+    raymarchShader.setJointLocations(bigEmptyArray);
+    raymarchShader.setLimbLengths(bigEmptyArray);
+    raymarchShader.setJointRadii(bigEmptyArray);
+    raymarchShader.setRotations([]); // mat4's
+    raymarchShader.setAppenData(bigEmptyArray);
+    raymarchShader.setAppenRad(bigEmptyArray);
+    raymarchShader.setAppenRotations([]); // mat4's
+    //bigEmptyArray = new Array(100);
+    // bigEmptyArray.fill(1);
+    // raymarchShader.setAppenBools(bigEmptyArray);
+    creature = new __WEBPACK_IMPORTED_MODULE_7__bodyParts_Creature__["a" /* default */]();
+    switch (controls.headType) {
+        case 'random':
+            headType = -1;
+            break;
+        case 'BUGG':
+            headType = 0;
+            break;
+        case 'DINO':
+            headType = 1;
+            break;
+        case 'TROLLE':
+            headType = 2;
+            break;
+    }
+    creature.generate(textures.length, controls.numLimbSets, headType);
+    let appenBools = []; // 0 will be foot, 1 will be hand
+    let armsNow = false;
+    for (let i = 0; i < creature.limbs.length; i++) {
+        if (armsNow) {
+            appenBools.push(1);
+            console.log("hand");
+            continue;
+        }
+        if (creature.limbs[i].isLeg) {
+            appenBools.push(0);
+            console.log("foot");
+        }
+        else {
+            armsNow = true;
+            appenBools.push(1);
+            console.log("hand");
+        }
+    }
+    console.log(appenBools);
+    raymarchShader.setAppenBools(appenBools);
+}
 function main() {
     // Initial display for framerate
     const stats = __WEBPACK_IMPORTED_MODULE_1_stats_js__();
@@ -3332,7 +3396,9 @@ function main() {
     document.body.appendChild(stats.domElement);
     // TODO: add any controls you need to the gui
     const gui = new __WEBPACK_IMPORTED_MODULE_2_dat_gui__["GUI"]();
-    // E.G. gui.add(controls, 'tesselations', 0, 8).step(1);
+    gui.add(controls, 'Generate');
+    gui.add(controls, 'numLimbSets', 0, 4).step(1);
+    gui.add(controls, 'headType', ['random', 'BUGG', 'DINO', 'TROLLE']);
     // get canvas and webgl context
     const canvas = document.getElementById('canvas');
     function setSize(width, height) {
@@ -3346,59 +3412,124 @@ function main() {
     // `setGL` is a function imported above which sets the value of `gl` in the `globals.ts` module.
     // Later, we can import `gl` from `globals.ts` to access it
     Object(__WEBPACK_IMPORTED_MODULE_5__globals__["b" /* setGL */])(gl);
-    screenQuad = new __WEBPACK_IMPORTED_MODULE_3__geometry_Square__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0));
+    //Load Textures
+    textures = [];
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('/resources/textures/noise.bmp'));
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('/resources/textures/fleshy.bmp'));
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('/resources/textures/furry.bmp'));
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('/resources/textures/scaly1.bmp'));
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('/resources/textures/scaly2.bmp'));
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('/resources/textures/veiny.bmp'));
+    screenQuad = new __WEBPACK_IMPORTED_MODULE_3__geometry_Square__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 0, 0));
     screenQuad.create();
-    const camera = new __WEBPACK_IMPORTED_MODULE_4__Camera__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 2.01), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 2));
+    const camera = new __WEBPACK_IMPORTED_MODULE_4__Camera__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 1, 2.01), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 1, 2));
     camera.controls.translateSpeed = 0;
     camera.controls.zoomSpeed = 0;
     gl.clearColor(0.0, 0.0, 0.0, 1);
     gl.disable(gl.DEPTH_TEST);
-    const raymarchShader = new __WEBPACK_IMPORTED_MODULE_6__rendering_gl_ShaderProgram__["b" /* default */]([
-        new __WEBPACK_IMPORTED_MODULE_6__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(67)),
-        new __WEBPACK_IMPORTED_MODULE_6__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(68)),
+    raymarchShader = new __WEBPACK_IMPORTED_MODULE_6__rendering_gl_ShaderProgram__["b" /* default */]([
+        new __WEBPACK_IMPORTED_MODULE_6__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(70)),
+        new __WEBPACK_IMPORTED_MODULE_6__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(71)),
     ]);
-    creature.generate(); // Pass in parameters for whole creature in GUI
+    raymarchShader.setupTexUnits(["tex_Color1"]);
+    raymarchShader.setupTexUnits(["tex_Color2"]);
+    switch (controls.headType) {
+        case 'random':
+            headType = -1;
+            break;
+        case 'BUGG':
+            headType = 0;
+            break;
+        case 'DINO':
+            headType = 1;
+            break;
+        case 'TROLLE':
+            headType = 2;
+            break;
+    }
+    creature.generate(textures.length, controls.numLimbSets, headType); // Pass in parameters for whole creature in GUI
+    // pass in arms vs. legs data
+    let appenBools = []; // 0 will be foot, 1 will be hand
+    let armsNow = false;
+    for (let i = 0; i < creature.limbs.length; i++) {
+        if (armsNow) {
+            appenBools.push(1);
+            console.log("hand");
+            continue;
+        }
+        if (creature.limbs[i].isLeg) {
+            appenBools.push(0);
+            console.log("foot");
+        }
+        else {
+            armsNow = true;
+            appenBools.push(1);
+            console.log("hand");
+        }
+    }
+    console.log(appenBools);
+    raymarchShader.setAppenBools(appenBools);
     // This function will be called every frame
     function tick() {
         camera.update();
         stats.begin();
+        raymarchShader.bindTexToUnit("tex_Color1", textures[creature.texture1], 0);
+        raymarchShader.bindTexToUnit("tex_Color2", textures[creature.texture2], 1);
         gl.viewport(0, 0, window.innerWidth, window.innerHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         // TODO: get / calculate relevant uniforms to send to shader here
         // TODO: send uniforms to shader
         creature.animate(time);
-        raymarchShader.setSpineLocations(creature.spine.metaBallPos);
+        raymarchShader.setSpineLocations(creature.spineLocations);
         raymarchShader.setSpineRadii(creature.spine.metaBallRadii);
         raymarchShader.setHead(creature.head.headData);
-        raymarchShader.setJointLocations([
-            .3, 0.0, 0.0,
-            -0.1, -0.2, 0.0,
-            0.2, -0.3, 0.0,
-            -.3, 0.0, 0.0,
-            0.1, 0.2, 0.0,
-            -0.2, 0.3, 0.0,
-            -0.2, 0.5, 0.0
-        ]);
-        raymarchShader.setJointIDs([
-            3.0, 4.0
-        ]);
-        raymarchShader.setJointRadii([
-            0.1,
-            0.08,
-            0.05,
-            0.1,
-            0.08,
-            0.05,
-            0.01
-        ]);
-        raymarchShader.setJointNumber(7);
-        raymarchShader.setResolution(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* vec2 */].fromValues(window.innerWidth, window.innerHeight));
+        raymarchShader.setAppenData(creature.appendages.appendageData);
+        let locations = creature.jointLocations;
+        raymarchShader.setJointLocations(locations);
+        let numJointsEach = creature.limbLengths;
+        raymarchShader.setLimbLengths(numJointsEach);
+        let radiis = creature.jointRadii;
+        raymarchShader.setJointRadii(radiis);
+        raymarchShader.setColors(creature.color1, creature.color2, creature.color3, creature.color4);
+        creature.appendages.generate(numJointsEach, locations);
+        //raymarchShader.setAppenBools(appenBools);
+        //console.log(creature.appendages.appendageData);
+        //raymarchShader.setJointNumber(7);
+        let rotations = [];
+        let finalRots = [];
+        let finalRadii = [];
+        let start = 0;
+        //need to do separately for each limb
+        for (let k = 0; k < numJointsEach.length; k++) {
+            //for as many joints in each limb
+            for (let l = 0; l < numJointsEach[k] - 1; l++) {
+                let a = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.0, 1.0, 0.0);
+                let b = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+                let point0 = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(locations[start], locations[start + 1], locations[start + 2]);
+                let point1 = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(locations[start + 3], locations[start + 4], locations[start + 5]);
+                b = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].subtract(b, point1, point0);
+                b = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].normalize(b, b);
+                let q;
+                q = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* quat */].create();
+                q = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* quat */].rotationTo(q, a, b);
+                let m4 = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["a" /* mat4 */].create();
+                m4 = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["a" /* mat4 */].fromQuat(m4, q);
+                rotations.push(m4);
+                if (l == numJointsEach[k] - 2) {
+                    //console.log(locations[start + 1]);
+                    finalRots.push(m4);
+                    finalRadii.push(radiis[start / 3]);
+                }
+                start = start + 3;
+            }
+            start = start + 3;
+        }
+        raymarchShader.setRotations(rotations);
+        raymarchShader.setAppenRotations(finalRots);
+        raymarchShader.setAppenRad(finalRadii);
+        raymarchShader.setResolution(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec2 */].fromValues(window.innerWidth, window.innerHeight));
         raymarchShader.setTime(time);
         raymarchShader.setViewMatrix(camera.viewMatrix);
-        // raymarchShader.setEye(camera.controls.eye);
-        // raymarchShader.setUp(camera.direction);
-        // raymarchShader.setRight(vec3.cross(vec3.create(), camera.direction, camera.up));
-        // raymarchShader.setForward(camera.up);
         // March!
         raymarchShader.draw(screenQuad);
         time = time + 1;
@@ -6134,21 +6265,22 @@ const sub = subtract;
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* unused harmony export create */
-/* unused harmony export identity */
-/* unused harmony export setAxisAngle */
-/* unused harmony export getAxisAngle */
-/* unused harmony export multiply */
-/* unused harmony export rotateX */
-/* unused harmony export rotateY */
-/* unused harmony export rotateZ */
-/* unused harmony export calculateW */
-/* unused harmony export slerp */
-/* unused harmony export invert */
-/* unused harmony export conjugate */
-/* unused harmony export fromMat3 */
-/* unused harmony export fromEuler */
-/* unused harmony export str */
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony export (immutable) */ __webpack_exports__["create"] = create;
+/* harmony export (immutable) */ __webpack_exports__["identity"] = identity;
+/* harmony export (immutable) */ __webpack_exports__["setAxisAngle"] = setAxisAngle;
+/* harmony export (immutable) */ __webpack_exports__["getAxisAngle"] = getAxisAngle;
+/* harmony export (immutable) */ __webpack_exports__["multiply"] = multiply;
+/* harmony export (immutable) */ __webpack_exports__["rotateX"] = rotateX;
+/* harmony export (immutable) */ __webpack_exports__["rotateY"] = rotateY;
+/* harmony export (immutable) */ __webpack_exports__["rotateZ"] = rotateZ;
+/* harmony export (immutable) */ __webpack_exports__["calculateW"] = calculateW;
+/* harmony export (immutable) */ __webpack_exports__["slerp"] = slerp;
+/* harmony export (immutable) */ __webpack_exports__["invert"] = invert;
+/* harmony export (immutable) */ __webpack_exports__["conjugate"] = conjugate;
+/* harmony export (immutable) */ __webpack_exports__["fromMat3"] = fromMat3;
+/* harmony export (immutable) */ __webpack_exports__["fromEuler"] = fromEuler;
+/* harmony export (immutable) */ __webpack_exports__["str"] = str;
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__common__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__mat3__ = __webpack_require__(5);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__vec3__ = __webpack_require__(6);
@@ -6541,7 +6673,7 @@ function str(a) {
  * @function
  */
 const clone = __WEBPACK_IMPORTED_MODULE_3__vec4__["clone"];
-/* unused harmony export clone */
+/* harmony export (immutable) */ __webpack_exports__["clone"] = clone;
 
 
 /**
@@ -6555,7 +6687,7 @@ const clone = __WEBPACK_IMPORTED_MODULE_3__vec4__["clone"];
  * @function
  */
 const fromValues = __WEBPACK_IMPORTED_MODULE_3__vec4__["fromValues"];
-/* unused harmony export fromValues */
+/* harmony export (immutable) */ __webpack_exports__["fromValues"] = fromValues;
 
 
 /**
@@ -6567,7 +6699,7 @@ const fromValues = __WEBPACK_IMPORTED_MODULE_3__vec4__["fromValues"];
  * @function
  */
 const copy = __WEBPACK_IMPORTED_MODULE_3__vec4__["copy"];
-/* unused harmony export copy */
+/* harmony export (immutable) */ __webpack_exports__["copy"] = copy;
 
 
 /**
@@ -6582,7 +6714,7 @@ const copy = __WEBPACK_IMPORTED_MODULE_3__vec4__["copy"];
  * @function
  */
 const set = __WEBPACK_IMPORTED_MODULE_3__vec4__["set"];
-/* unused harmony export set */
+/* harmony export (immutable) */ __webpack_exports__["set"] = set;
 
 
 /**
@@ -6595,7 +6727,7 @@ const set = __WEBPACK_IMPORTED_MODULE_3__vec4__["set"];
  * @function
  */
 const add = __WEBPACK_IMPORTED_MODULE_3__vec4__["add"];
-/* unused harmony export add */
+/* harmony export (immutable) */ __webpack_exports__["add"] = add;
 
 
 /**
@@ -6603,7 +6735,7 @@ const add = __WEBPACK_IMPORTED_MODULE_3__vec4__["add"];
  * @function
  */
 const mul = multiply;
-/* unused harmony export mul */
+/* harmony export (immutable) */ __webpack_exports__["mul"] = mul;
 
 
 /**
@@ -6616,7 +6748,7 @@ const mul = multiply;
  * @function
  */
 const scale = __WEBPACK_IMPORTED_MODULE_3__vec4__["scale"];
-/* unused harmony export scale */
+/* harmony export (immutable) */ __webpack_exports__["scale"] = scale;
 
 
 /**
@@ -6628,7 +6760,7 @@ const scale = __WEBPACK_IMPORTED_MODULE_3__vec4__["scale"];
  * @function
  */
 const dot = __WEBPACK_IMPORTED_MODULE_3__vec4__["dot"];
-/* unused harmony export dot */
+/* harmony export (immutable) */ __webpack_exports__["dot"] = dot;
 
 
 /**
@@ -6642,7 +6774,7 @@ const dot = __WEBPACK_IMPORTED_MODULE_3__vec4__["dot"];
  * @function
  */
 const lerp = __WEBPACK_IMPORTED_MODULE_3__vec4__["lerp"];
-/* unused harmony export lerp */
+/* harmony export (immutable) */ __webpack_exports__["lerp"] = lerp;
 
 
 /**
@@ -6652,7 +6784,7 @@ const lerp = __WEBPACK_IMPORTED_MODULE_3__vec4__["lerp"];
  * @returns {Number} length of a
  */
 const length = __WEBPACK_IMPORTED_MODULE_3__vec4__["length"];
-/* unused harmony export length */
+/* harmony export (immutable) */ __webpack_exports__["length"] = length;
 
 
 /**
@@ -6660,7 +6792,7 @@ const length = __WEBPACK_IMPORTED_MODULE_3__vec4__["length"];
  * @function
  */
 const len = length;
-/* unused harmony export len */
+/* harmony export (immutable) */ __webpack_exports__["len"] = len;
 
 
 /**
@@ -6671,7 +6803,7 @@ const len = length;
  * @function
  */
 const squaredLength = __WEBPACK_IMPORTED_MODULE_3__vec4__["squaredLength"];
-/* unused harmony export squaredLength */
+/* harmony export (immutable) */ __webpack_exports__["squaredLength"] = squaredLength;
 
 
 /**
@@ -6679,7 +6811,7 @@ const squaredLength = __WEBPACK_IMPORTED_MODULE_3__vec4__["squaredLength"];
  * @function
  */
 const sqrLen = squaredLength;
-/* unused harmony export sqrLen */
+/* harmony export (immutable) */ __webpack_exports__["sqrLen"] = sqrLen;
 
 
 /**
@@ -6691,7 +6823,7 @@ const sqrLen = squaredLength;
  * @function
  */
 const normalize = __WEBPACK_IMPORTED_MODULE_3__vec4__["normalize"];
-/* unused harmony export normalize */
+/* harmony export (immutable) */ __webpack_exports__["normalize"] = normalize;
 
 
 /**
@@ -6702,7 +6834,7 @@ const normalize = __WEBPACK_IMPORTED_MODULE_3__vec4__["normalize"];
  * @returns {Boolean} True if the vectors are equal, false otherwise.
  */
 const exactEquals = __WEBPACK_IMPORTED_MODULE_3__vec4__["exactEquals"];
-/* unused harmony export exactEquals */
+/* harmony export (immutable) */ __webpack_exports__["exactEquals"] = exactEquals;
 
 
 /**
@@ -6713,7 +6845,7 @@ const exactEquals = __WEBPACK_IMPORTED_MODULE_3__vec4__["exactEquals"];
  * @returns {Boolean} True if the vectors are equal, false otherwise.
  */
 const equals = __WEBPACK_IMPORTED_MODULE_3__vec4__["equals"];
-/* unused harmony export equals */
+/* harmony export (immutable) */ __webpack_exports__["equals"] = equals;
 
 
 /**
@@ -6757,7 +6889,7 @@ const rotationTo = (function() {
     }
   };
 })();
-/* unused harmony export rotationTo */
+/* harmony export (immutable) */ __webpack_exports__["rotationTo"] = rotationTo;
 
 
 /**
@@ -6783,7 +6915,7 @@ const sqlerp = (function () {
     return out;
   };
 }());
-/* unused harmony export sqlerp */
+/* harmony export (immutable) */ __webpack_exports__["sqlerp"] = sqlerp;
 
 
 /**
@@ -6815,7 +6947,7 @@ const setAxes = (function() {
     return normalize(out, fromMat3(out, matr));
   };
 })();
-/* unused harmony export setAxes */
+/* harmony export (immutable) */ __webpack_exports__["setAxes"] = setAxes;
 
 
 
@@ -11920,7 +12052,7 @@ dat.utils.common);
 class Square extends __WEBPACK_IMPORTED_MODULE_1__rendering_gl_Drawable__["a" /* default */] {
     constructor(center) {
         super(); // Call the constructor of the super class. This is required.
-        this.center = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(center[0], center[1], center[2], 1);
+        this.center = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["e" /* vec4 */].fromValues(center[0], center[1], center[2], 1);
     }
     create() {
         this.indices = new Uint32Array([0, 1, 2,
@@ -12028,16 +12160,16 @@ class Camera {
         this.aspectRatio = 1;
         this.near = 0.1;
         this.far = 100;
-        this.position = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].create();
-        this.direction = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].create();
-        this.target = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].create();
-        this.up = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].create();
+        this.position = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["d" /* vec3 */].create();
+        this.direction = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["d" /* vec3 */].create();
+        this.target = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["d" /* vec3 */].create();
+        this.up = __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["d" /* vec3 */].create();
         this.controls = __WEBPACK_IMPORTED_MODULE_0_3d_view_controls__(document.getElementById('canvas'), {
             eye: position,
             center: target,
         });
         this.controls.mode = 'turntable';
-        __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].add(this.target, this.position, this.direction);
+        __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["d" /* vec3 */].add(this.target, this.position, this.direction);
         __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["a" /* mat4 */].lookAt(this.viewMatrix, this.controls.eye, this.controls.center, this.controls.up);
     }
     setAspectRatio(aspectRatio) {
@@ -12048,7 +12180,7 @@ class Camera {
     }
     update() {
         this.controls.tick();
-        __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["c" /* vec3 */].add(this.target, this.position, this.direction);
+        __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["d" /* vec3 */].add(this.target, this.position, this.direction);
         __WEBPACK_IMPORTED_MODULE_1_gl_matrix__["a" /* mat4 */].lookAt(this.viewMatrix, this.controls.eye, this.controls.center, this.controls.up);
     }
 }
@@ -15103,39 +15235,48 @@ class ShaderProgram {
         this.unifSpineLocations = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_SpineLoc");
         this.unifSpineRadii = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_SpineRad");
         this.unifHead = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Head");
-        this.unifLimbJointIDs = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_JointID");
+        this.unifLimbLengths = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_LimbLengths");
         this.unifLimbJointLocations = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_JointLoc");
         this.unifLimbJointRadii = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_JointRad");
-        this.unifJointNumber = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_jointNum");
+        this.unifBodyColor1 = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Color1");
+        this.unifBodyColor2 = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Color2");
+        this.unifBodyColor3 = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Color3");
+        this.unifBodyColor4 = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Color4");
+        this.unifTestMat = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_TestMat");
+        this.unifRotations = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Rotations");
+        this.unifAppenRots = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_AppenRots");
+        this.unifAppenRad = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_AppenRad");
+        this.unifAppenData = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_AppenData");
+        this.unifAppenBools = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, "u_AppenBools");
+        this.unifTexUnits = new Map();
+    }
+    setupTexUnits(handleNames) {
+        for (let handle of handleNames) {
+            var location = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].getUniformLocation(this.prog, handle);
+            if (location !== -1) {
+                this.unifTexUnits.set(handle, location);
+            }
+            else {
+                console.log("Could not find handle for texture named: \'" + handle + "\'!");
+            }
+        }
+    }
+    bindTexToUnit(handleName, tex, unit) {
+        this.use();
+        var location = this.unifTexUnits.get(handleName);
+        if (location !== undefined) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].activeTexture(__WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE0 + unit);
+            tex.bindTex();
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1i(location, unit);
+        }
+        else {
+            console.log("Texture with handle name: \'" + handleName + "\' was not found");
+        }
     }
     use() {
         if (activeProgram !== this.prog) {
             __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].useProgram(this.prog);
             activeProgram = this.prog;
-        }
-    }
-    setEye(eye) {
-        this.use();
-        if (this.unifEye !== -1) {
-            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifEye, eye);
-        }
-    }
-    setUp(up) {
-        this.use();
-        if (this.unifUp !== -1) {
-            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifUp, up);
-        }
-    }
-    setRight(right) {
-        this.use();
-        if (this.unifRight !== -1) {
-            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifRight, right);
-        }
-    }
-    setForward(forward) {
-        this.use();
-        if (this.unifForward !== -1) {
-            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifForward, forward);
         }
     }
     setViewMatrix(vp) {
@@ -15187,16 +15328,102 @@ class ShaderProgram {
             __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1fv(this.unifLimbJointRadii, radii);
         }
     }
-    setJointIDs(radii) {
+    setLimbLengths(lengths) {
         this.use();
-        if (this.unifLimbJointIDs !== -1) {
-            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1fv(this.unifLimbJointIDs, radii);
+        if (this.unifLimbLengths !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1iv(this.unifLimbLengths, lengths);
         }
     }
-    setJointNumber(num) {
+    setColors(color1, color2, color3, color4) {
         this.use();
-        if (this.unifJointNumber !== -1) {
-            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1i(this.unifJointNumber, num);
+        if (this.unifBodyColor1 !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifBodyColor1, color1);
+        }
+        if (this.unifBodyColor2 !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifBodyColor2, color2);
+        }
+        if (this.unifBodyColor2 !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifBodyColor3, color3);
+        }
+        if (this.unifBodyColor2 !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform3fv(this.unifBodyColor4, color4);
+        }
+    }
+    setTestMatrix(test) {
+        this.use();
+        if (this.unifTestMat !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniformMatrix4fv(this.unifTestMat, false, test);
+        }
+    }
+    setRotations(rotations) {
+        let numbers = [];
+        for (let i = 0; i < rotations.length; i++) {
+            let m4 = rotations[i];
+            numbers.push(m4[0]);
+            numbers.push(m4[1]);
+            numbers.push(m4[2]);
+            numbers.push(m4[3]);
+            numbers.push(m4[4]);
+            numbers.push(m4[5]);
+            numbers.push(m4[6]);
+            numbers.push(m4[7]);
+            numbers.push(m4[8]);
+            numbers.push(m4[9]);
+            numbers.push(m4[10]);
+            numbers.push(m4[11]);
+            numbers.push(m4[12]);
+            numbers.push(m4[13]);
+            numbers.push(m4[14]);
+            numbers.push(m4[15]);
+        }
+        this.use();
+        if (this.unifRotations !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniformMatrix4fv(this.unifRotations, false, numbers);
+        }
+    }
+    setAppenRotations(rotations) {
+        let numbers = [];
+        for (let i = 0; i < rotations.length; i++) {
+            let m4 = rotations[i];
+            numbers.push(m4[0]);
+            numbers.push(m4[1]);
+            numbers.push(m4[2]);
+            numbers.push(m4[3]);
+            numbers.push(m4[4]);
+            numbers.push(m4[5]);
+            numbers.push(m4[6]);
+            numbers.push(m4[7]);
+            numbers.push(m4[8]);
+            numbers.push(m4[9]);
+            numbers.push(m4[10]);
+            numbers.push(m4[11]);
+            numbers.push(m4[12]);
+            numbers.push(m4[13]);
+            numbers.push(m4[14]);
+            numbers.push(m4[15]);
+        }
+        this.use();
+        if (this.unifRotations !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniformMatrix4fv(this.unifAppenRots, false, numbers);
+        }
+    }
+    setAppenData(data) {
+        this.use();
+        if (this.unifAppenData !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1fv(this.unifAppenData, data);
+        }
+    }
+    setAppenBools(data) {
+        this.use();
+        if (this.unifAppenBools !== -1) {
+            console.log("In ShaderProg: " + data);
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1iv(this.unifAppenBools, data);
+        }
+    }
+    setAppenRad(data) {
+        this.use();
+        if (this.unifAppenRad !== -1) {
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].uniform1fv(this.unifAppenRad, data);
         }
     }
     // TODO: add functions to modify uniforms
@@ -15223,17 +15450,79 @@ class ShaderProgram {
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Spine__ = __webpack_require__(65);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Head__ = __webpack_require__(66);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Limb__ = __webpack_require__(67);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_gl_matrix__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__Appendage__ = __webpack_require__(68);
+
+
+
 
 
 class Creature {
     constructor() {
-        this.spine = new __WEBPACK_IMPORTED_MODULE_0__Spine__["a" /* default */]();
-        this.head = new __WEBPACK_IMPORTED_MODULE_1__Head__["a" /* default */]();
     }
-    generate() {
+    generate(numTextures, numLimbSets, headType) {
+        this.texture1 = Math.floor(Math.random() * numTextures);
+        this.texture2 = Math.floor(Math.random() * numTextures);
+        this.color1 = __WEBPACK_IMPORTED_MODULE_3_gl_matrix__["d" /* vec3 */].fromValues(Math.random(), Math.random(), Math.random());
+        this.color2 = __WEBPACK_IMPORTED_MODULE_3_gl_matrix__["d" /* vec3 */].fromValues(Math.random(), Math.random(), Math.random());
+        this.color3 = __WEBPACK_IMPORTED_MODULE_3_gl_matrix__["d" /* vec3 */].fromValues(Math.random(), Math.random(), Math.random());
+        this.color4 = __WEBPACK_IMPORTED_MODULE_3_gl_matrix__["d" /* vec3 */].fromValues(Math.random(), Math.random(), Math.random());
+        this.spine = new __WEBPACK_IMPORTED_MODULE_0__Spine__["a" /* default */]();
+        this.spineLocations = [];
+        this.head = new __WEBPACK_IMPORTED_MODULE_1__Head__["a" /* default */]();
+        this.limbs = [];
+        this.jointLocations = [];
+        this.jointRadii = [];
+        this.limbLengths = [];
+        this.appendages = new __WEBPACK_IMPORTED_MODULE_4__Appendage__["a" /* default */]();
         this.spine.generate();
+        for (let i = 0; i < this.spine.metaBallPos.length; i++) {
+            let spinePos = this.spine.metaBallPos[i];
+            this.spineLocations.push(spinePos[0]);
+            this.spineLocations.push(spinePos[1]);
+            this.spineLocations.push(spinePos[2]);
+        }
         // Head takes information from the spine that is made previously
-        this.head.generate(this.spine.metaBallPos, this.spine.metaBallRadii);
+        this.head.generate(this.spineLocations, this.spine.metaBallRadii, headType);
+        this.appendages.generate(this.limbLengths, this.jointLocations);
+        //Leg generation and parsing
+        let numLimbs;
+        if (numLimbSets == 0) {
+            numLimbs = Math.pow(Math.random(), 1.7) * 2 + 1;
+        }
+        else {
+            numLimbs = numLimbSets;
+        }
+        let generatingArms = false;
+        for (let i = 0; i < numLimbs; i++) {
+            let limb1 = new __WEBPACK_IMPORTED_MODULE_2__Limb__["a" /* default */](!generatingArms);
+            let offset = (Math.random() * this.spine.metaBallPos.length / numLimbs) * 0.8;
+            let spineIndex = this.spine.metaBallPos.length - 1 - Math.max(Math.min(Math.floor(i * this.spine.metaBallPos.length / numLimbs + offset), this.spine.metaBallPos.length - 1), 0);
+            let startPos = this.spine.metaBallPos[spineIndex];
+            startPos[2] += this.spine.metaBallRadii[spineIndex] / 2 + 0.1;
+            limb1.generate(startPos, this.spine.metaBallRadii[spineIndex] * 0.7);
+            let limb2 = new __WEBPACK_IMPORTED_MODULE_2__Limb__["a" /* default */](true);
+            for (let j = 0; j < limb1.jointPos.length; j++) {
+                limb2.jointPos.push(__WEBPACK_IMPORTED_MODULE_3_gl_matrix__["d" /* vec3 */].multiply(__WEBPACK_IMPORTED_MODULE_3_gl_matrix__["d" /* vec3 */].create(), limb1.jointPos[j], __WEBPACK_IMPORTED_MODULE_3_gl_matrix__["d" /* vec3 */].fromValues(1, 1, -1)));
+                limb2.jointRadii.push(limb1.jointRadii[j]);
+            }
+            this.limbs.push(limb1);
+            this.limbs.push(limb2);
+            if (Math.random() > 0.6)
+                generatingArms = true;
+        }
+        for (let i = 0; i < this.limbs.length; i++) {
+            let leg = this.limbs[i];
+            this.limbLengths.push(leg.jointPos.length);
+            for (let j = 0; j < leg.jointPos.length; j++) {
+                let joint = leg.jointPos[j];
+                this.jointLocations.push(joint[0]);
+                this.jointLocations.push(joint[1]);
+                this.jointLocations.push(joint[2]);
+                this.jointRadii.push(leg.jointRadii[j]);
+            }
+        }
     }
     animate(time) {
         this.spine.animate(time);
@@ -15260,7 +15549,7 @@ class Spine {
         this.splinePoints = [];
         this.metaBallPos = [];
         this.metaBallRadii = [];
-        let numMetaBalls = 12;
+        let numMetaBalls = 8;
         let radius = ((this.maxSpineRadius - this.minSpineRadius) * Math.pow(Math.random(), 1.2) + this.minSpineRadius); //pow to bias smaller radii
         for (let i = 0; i < numMetaBalls; i++) {
             // radius = 0.2;
@@ -15282,8 +15571,8 @@ class Spine {
             t += 1 / numMetaBalls;
             let pos = this.getPosOnSpline(t);
             let posNearby = this.getPosOnSpline(t + 0.05);
-            let slope = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create();
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].scale(slope, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].normalize(slope, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].subtract(slope, pos, posNearby)), -1 * this.metaBallRadii[j]);
+            let slope = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].scale(slope, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].normalize(slope, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].subtract(slope, pos, posNearby)), -1 * this.metaBallRadii[j]);
             pos[0] += slope[1];
             pos[1] += slope[0];
             if (pos[0] == 0 && pos[1] == 0 && pos[2] == 0)
@@ -15291,52 +15580,62 @@ class Spine {
             positions.push(pos);
         }
         for (let j = 1; j < numMetaBalls; j++) {
-            let diff = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create();
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].subtract(diff, positions[j - 1], positions[j]);
-            let dist = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].length(diff);
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].normalize(diff, diff);
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].add(positions[j], positions[j], __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].scale(diff, diff, Math.max(dist - (this.metaBallRadii[j - 1] / 2 + this.metaBallRadii[j] / 2), 0)));
+            let diff = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].subtract(diff, positions[j - 1], positions[j]);
+            let dist = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].length(diff);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].normalize(diff, diff);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(positions[j], positions[j], __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].scale(diff, diff, Math.max(dist - (this.metaBallRadii[j - 1] / 2 + this.metaBallRadii[j] / 2), 0)));
+        }
+        let averagePos = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+        for (let j = 0; j < numMetaBalls; j++) {
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(averagePos, averagePos, positions[j]);
+        }
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].scale(averagePos, averagePos, 1 / numMetaBalls);
+        let creatureHeight = Math.random() * 1.5 + 0.5;
+        for (let j = 0; j < numMetaBalls; j++) {
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].subtract(positions[j], positions[j], averagePos);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(positions[j], positions[j], __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, -creatureHeight, 0));
+            if (positions[j][1] > -0.2)
+                positions[j][1] = -0.2;
         }
         for (let j = 0; j < numMetaBalls; j++) {
-            this.metaBallPos.push(positions[j][0]);
-            this.metaBallPos.push(positions[j][1]);
-            this.metaBallPos.push(positions[j][2]);
+            this.metaBallPos.push(positions[j]);
         }
     }
     getPosOnSpline(t) {
         let qs = [];
         let rs = [];
         for (let i = 0; i < 3; i++) {
-            let newPoint = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create();
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].subtract(newPoint, this.splinePoints[i + 1], this.splinePoints[i]);
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].scale(newPoint, newPoint, t);
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].add(newPoint, newPoint, this.splinePoints[i]);
+            let newPoint = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].subtract(newPoint, this.splinePoints[i + 1], this.splinePoints[i]);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].scale(newPoint, newPoint, t);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(newPoint, newPoint, this.splinePoints[i]);
             qs.push(newPoint);
         }
         for (let i = 0; i < 2; i++) {
-            let newPoint = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create();
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].subtract(newPoint, qs[i + 1], qs[i]);
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].scale(newPoint, newPoint, t);
-            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].add(newPoint, newPoint, qs[i]);
+            let newPoint = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].subtract(newPoint, qs[i + 1], qs[i]);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].scale(newPoint, newPoint, t);
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(newPoint, newPoint, qs[i]);
             rs.push(newPoint);
         }
-        let pos = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create();
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].subtract(pos, rs[1], rs[0]);
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].scale(pos, pos, t);
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].add(pos, pos, rs[0]);
+        let pos = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].subtract(pos, rs[1], rs[0]);
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].scale(pos, pos, t);
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(pos, pos, rs[0]);
         return pos;
     }
     randomizeSpline() {
         let numSplinePoints = 4;
         for (let i = 0; i < numSplinePoints; i++) {
-            let newPoint = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0.8 * i + 0.3 * Math.random(), 1. * (2 * Math.random() - 1), 0);
+            let newPoint = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.5 * i + 0.3 * Math.random(), 1. * (2 * Math.random() - 1), 0);
             this.splinePoints.push(newPoint);
         }
     }
     animate(time) {
-        for (let i = 1; i < this.metaBallPos.length; i += 3) {
-            this.metaBallPos[i] += 0.01 * Math.sin(time * 0.5 + 0.3 * i);
-        }
+        // for (let i = 1; i < this.metaBallPos.length; i += 3) {
+        //   this.metaBallPos[i] += 0.01* Math.sin(time * 0.5 + 0.3 * i);
+        // }
     }
 }
 ;
@@ -15351,7 +15650,7 @@ class Spine {
 class Head {
     constructor() {
     }
-    generate(spinePos, spineRadii) {
+    generate(spinePos, spineRadii, type) {
         this.headData = [];
         let firstPos = [];
         firstPos.push(spinePos[0]);
@@ -15372,19 +15671,24 @@ class Head {
         avg = sum / spineRadii.length;
         console.log(avg);
         this.headData.push(avg);
-        let rand = Math.random();
-        if (rand < .33) {
-            this.headData.push(0.0);
-        }
-        else if (rand < .66) {
-            this.headData.push(1.0);
+        if (type == -1) {
+            let rand = Math.random();
+            if (rand < .33) {
+                this.headData.push(0.0);
+            }
+            else if (.33 < rand && rand < .66) {
+                this.headData.push(1.0);
+            }
+            else {
+                this.headData.push(2.0);
+            }
         }
         else {
-            this.headData.push(2.0);
+            this.headData.push(type);
         }
     }
     animate(time) {
-        this.headData[1] += 0.01 * Math.sin(time * 0.5 + 0.3 * 1);
+        // this.headData[1] += 0.01* Math.sin(time * 0.5 + 0.3 * 1);
     }
 }
 ;
@@ -15393,15 +15697,155 @@ class Head {
 
 /***/ }),
 /* 67 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(1);
+
+class Limb {
+    constructor(isLeg) {
+        this.isLeg = isLeg;
+        this.jointPos = [];
+        this.jointRadii = [];
+        // if(isLeg) {
+        //   console.log("LEggy");
+        // }
+        // else {
+        //   // once arm, will stay arm
+        //   console.log("Army");
+        // }
+        //console.log("hey");
+    }
+    generate(startPos, startRadius) {
+        let numJoints = Math.floor(Math.random() * 3. + 2.);
+        let radius = (Math.random() * 2 - 1) * 0.1 + startRadius;
+        if (radius > 0.25)
+            radius = 0.25;
+        if (radius < 0.05)
+            radius = 0.05;
+        this.jointPos.push(startPos);
+        this.jointRadii.push(radius);
+        for (let i = 1; i < numJoints; i++) {
+            let yaw = (Math.random()) * Math.PI * 0.8 + Math.PI;
+            let pitch = (Math.random() * 2 - 1) * Math.PI * 0.35;
+            let r = this.jointRadii[i - 1] / 0.2 * (Math.random() * 0.5 + 0.2 + this.jointRadii[i - 1] / 2);
+            let dx = r * Math.sin(pitch) * Math.cos(yaw);
+            let dy = r * Math.cos(pitch);
+            let dz = r * Math.sin(pitch) * Math.sin(yaw);
+            let newPos = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create(), this.jointPos[i - 1], __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(dx, dy, dz));
+            if (this.isLeg && i + 1 >= numJoints) {
+                newPos[1] = 0.0;
+            }
+            if (newPos[2] < 0.05)
+                newPos[2] = 0.1;
+            if (newPos[1] > -0.1)
+                newPos[1] = -0.1;
+            this.jointPos.push(newPos);
+            radius += (Math.random() * 2 - 1) * 0.05 - 0.1;
+            if (radius > 0.25)
+                radius = 0.25;
+            if (radius < 0.05)
+                radius = 0.05;
+            this.jointRadii.push(radius);
+        }
+    }
+    animate(time) {
+    }
+}
+;
+/* harmony default export */ __webpack_exports__["a"] = (Limb);
+
+
+/***/ }),
+/* 68 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+class Appendages {
+    constructor() {
+    }
+    generate(jointsPerLimb, jointPos) {
+        this.appendageData = [];
+        this.appendageData.push(jointsPerLimb.length);
+        let start = 0;
+        let first = 0;
+        for (let i = 0; i < jointsPerLimb.length; i++) {
+            //need last position
+            first = start + (3 * ((jointsPerLimb[i] - 1)));
+            //console.log("first: " + first);
+            this.appendageData.push(jointPos[first]);
+            this.appendageData.push(jointPos[first + 1]);
+            this.appendageData.push(jointPos[first + 2]);
+            start = first + 3;
+        }
+    }
+    animate(time) {
+        // this.headData[1] += 0.01* Math.sin(time * 0.5 + 0.3 * 1);
+    }
+}
+;
+/* harmony default export */ __webpack_exports__["a"] = (Appendages);
+
+
+/***/ }),
+/* 69 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__globals__ = __webpack_require__(2);
+
+class Texture {
+    bindTex() {
+        __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].bindTexture(__WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE_2D, this.texture);
+    }
+    handle() {
+        return this.texture;
+    }
+    isPowerOf2(value) {
+        return (value & (value - 1)) == 0;
+    }
+    constructor(imgSource) {
+        this.texture = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].createTexture();
+        this.bindTex();
+        // create a white pixel to serve as placeholder
+        const formatSrc = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].RGBA;
+        const formatDst = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].RGBA;
+        const lvl = 0;
+        const phWidth = 1; // placeholder
+        const phHeight = 1;
+        const phImg = new Uint8Array([255, 255, 255, 255]);
+        const formatBit = __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].UNSIGNED_BYTE; // TODO: HDR
+        __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].texImage2D(__WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE_2D, lvl, formatDst, phWidth, phHeight, 0, formatSrc, formatBit, phImg);
+        // get a javascript image locally and load it. not instant but will auto-replace white pixel
+        const img = new Image();
+        img.onload = function () {
+            this.bindTex();
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].texImage2D(__WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE_2D, lvl, formatDst, img.width, img.height, 0, formatSrc, formatBit, img);
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].texParameteri(__WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE_2D, __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE_WRAP_S, __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].REPEAT);
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].texParameteri(__WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE_2D, __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE_WRAP_T, __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].REPEAT);
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].texParameteri(__WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE_2D, __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE_MIN_FILTER, __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].LINEAR);
+            __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].texParameteri(__WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE_2D, __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].TEXTURE_MAG_FILTER, __WEBPACK_IMPORTED_MODULE_0__globals__["a" /* gl */].LINEAR);
+        }.bind(this);
+        img.src = imgSource; // load the image
+    }
+}
+/* unused harmony export Texture */
+
+;
+/* harmony default export */ __webpack_exports__["a"] = (Texture);
+
+
+/***/ }),
+/* 70 */
 /***/ (function(module, exports) {
 
 module.exports = "#version 300 es\r\n\r\nprecision highp float;\r\n\r\nin vec4 vs_Pos;\r\nout vec4 fs_Pos;\r\n\r\nvoid main() {\r\n\t// TODO: Pass relevant info to fragment\r\n\tfs_Pos = vs_Pos;\r\n\tgl_Position = vs_Pos;\r\n}\r\n"
 
 /***/ }),
-/* 68 */
+/* 71 */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\r\n\r\nprecision highp float;\r\n\r\nin vec4 fs_Pos;\r\nout vec4 out_Col;\r\n\r\nuniform vec2 u_Resolution;\r\nuniform float u_Time;\r\nuniform mat4 u_View;\r\nuniform vec3 u_Eye;\r\nuniform vec3 u_Up;\r\nuniform vec3 u_Right;\r\nuniform vec3 u_Forward;\r\n\r\nuniform float u_SpineLoc[24];\r\nuniform float u_SpineRad[8];\r\n\r\nuniform float u_Head[5]; // indices 0-2 are positions, 3 is radius\r\n\r\nuniform int u_jointNum;\r\n\r\nuniform float u_JointID[4];  //size is number of limbs\r\nuniform float u_JointLoc[50]; //size is  numbe of joints * 3\r\nuniform float u_JointRad[50]; //size is number of joints\r\n//pass in number of joints...\r\n\r\n\r\nfloat headType;\r\n\r\nconst int MAX_STEPS = 300;\r\nconst float MIN_DIST = 0.0001;\r\nconst float MAX_DIST = 100.0;\r\nconst float EPSILON = 0.002;\r\n\r\n\r\n\r\nmat3 rotateMatX(float angle) {\r\n\tfloat rad = radians(angle);\r\n\treturn mat3(\r\n\t\tvec3(1.0, 0.0, 0.0),\r\n\t\tvec3(0.0, cos(rad), -sin(rad)),\r\n\t\tvec3(0.0, sin(rad), cos(rad))\r\n\t);\r\n}\r\n\r\nmat3 rotateMatY(float angle) {\r\n\tfloat rad = radians(angle);\r\n\treturn mat3(\r\n\t\tvec3(cos(rad), 0.0, sin(rad)),\r\n\t\tvec3(0.0, 1.0, 0.0),\r\n\t\tvec3(-sin(rad), 0.0, cos(rad))\r\n\t);\r\n}\r\n\r\nmat3 rotateMatZ(float angle) {\r\n\tfloat rad = radians(angle);\r\n\treturn mat3(\r\n\t\tvec3(cos(rad), -sin(rad), 0.0),\r\n\t\tvec3(sin(rad), cos(rad), 0.0),\r\n\t\tvec3(0.0, 0.0, 1.0)\r\n\t);\r\n}\r\n\r\nmat3 scaleMat(float amt) {\r\n\treturn mat3(\r\n\t\tvec3(amt, 0.0, 0.0),\r\n\t\tvec3(0.0, amt, 0.0),\r\n\t\tvec3(0.0, 0.0, amt)\r\n\t);\r\n}\r\n\r\n// polynomial smooth min\r\nfloat smin( float a, float b, float k ) {\r\n    float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );\r\n    return mix( b, a, h ) - k*h*(1.0-h);\r\n}\r\n\r\nfloat sminExp( float a, float b, float k ) {\r\n    float res = exp( -k*a ) + exp( -k*b );\r\n    return -log( res )/k;\r\n}\r\n\r\nfloat sminPow( float a, float b, float k ) {\r\n    a = pow( a, k ); b = pow( b, k );\r\n    return pow( (a*b)/(a+b), 1.0/k );\r\n} \r\n\r\n\r\n\r\nfloat sphereSDF(vec3 p, float r) {\r\n\t\treturn length(p) - r;\r\n}\r\n\r\nfloat cubeSDF( vec3 p, float r) {\r\n     vec3 d = abs(p) - vec3(r, r, r);   \r\n     float insideDistance = min(max(d.x, max(d.y, d.z)), 0.0);\r\n     float outsideDistance = length(max(d, 0.0));  \r\n     return insideDistance + outsideDistance;\r\n }\r\n\r\n float sdCappedCylinder( vec3 p, vec2 h ) {\r\n  vec2 d = abs(vec2(length(p.xz),p.y)) - h;\r\n  return min(max(d.x,d.y),0.0) + length(max(d,0.0));\r\n}\r\n\r\nfloat udBox( vec3 p, vec3 b ) {\r\n  return length(max(abs(p)-b,0.0));\r\n}\r\n\r\nfloat sdCone( vec3 p, vec2 c ) {\r\n    // c must be normalized\r\n    float q = length(p.xy);\r\n    return dot(c,vec2(q,p.z));\r\n}\r\n\r\nfloat sdCappedCone( in vec3 p, in vec3 c ) {\r\n    vec2 q = vec2( length(p.xz), p.y );\r\n    vec2 v = vec2( c.z*c.y/c.x, -c.z );\r\n    vec2 w = v - q;\r\n    vec2 vv = vec2( dot(v,v), v.x*v.x );\r\n    vec2 qv = vec2( dot(v,w), v.x*w.x );\r\n    vec2 d = max(qv,0.0)*qv/vv;\r\n    return sqrt( dot(w,w) - max(d.x,d.y) ) * sign(max(q.y*v.x-q.x*v.y,w.y));\r\n}\r\n\r\nfloat udRoundBox( vec3 p, vec3 b, float r ) {\r\n  return length(max(abs(p)-b,0.0))-r;\r\n}\r\n\r\nfloat sdCapsule( vec3 p, vec3 a, vec3 b, float r ) {\r\n    vec3 pa = p - a, ba = b - a;\r\n    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );\r\n    return length( pa - ba*h ) - r;\r\n}\r\n\r\n// a better capped cone function (like what)\r\nfloat sdConeSection( in vec3 p, in float h, in float r1, in float r2 ) {\r\n    float d1 = -p.y - h;\r\n    float q = p.y - h;\r\n    float si = 0.5*(r1-r2)/h;\r\n    float d2 = max( sqrt( dot(p.xz,p.xz)*(1.0-si*si)) + q*si - r2, q );\r\n    return length(max(vec2(d1,d2),0.0)) + min(max(d1,d2), 0.);\r\n}\r\n\r\n//~~~~~HEAD SDFs~~~~~///\r\nfloat bugHeadSDF(vec3 p) {\r\n\tp = p * rotateMatY(-90.0);\r\n\tfloat base = sphereSDF(p, u_Head[3]);\r\n \tfloat eyes = min(sphereSDF(p + u_Head[3] * vec3(0.55,-0.35,-.71), u_Head[3] * .2), sphereSDF(p + u_Head[3] * vec3(-0.55,-0.35,-.71), u_Head[3] * .2));\r\n\tfloat mandibleBase = sdCappedCylinder(p + u_Head[3] * vec3(0.0,0.001,-.9), u_Head[3] * vec2(1.2, 0.1));\r\n\tfloat mandibles = max(mandibleBase, -sphereSDF(p + u_Head[3] * vec3(0.0,0.0,-0.60), .7 * u_Head[3]));\r\n\tmandibles = max(mandibles, -sphereSDF(p + u_Head[3] * vec3(0.0,0.0,-1.70), .7 * u_Head[3]));\r\n\tfloat head = smin(min(base, eyes), mandibles, .05);\r\n\treturn head;\r\n}\r\n\r\nfloat dinoHeadSDF(vec3 p) {\r\n\tp = p * rotateMatY(-90.0);\r\n\tfloat base = sphereSDF(p, u_Head[3]);\r\n\tfloat topJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.3,-1.4), u_Head[3] * 1.08);\r\n\ttopJaw = max(topJaw, -cubeSDF(p + u_Head[3] * vec3(0.0,1.4,-1.4), u_Head[3] * 1.2));\r\n\tfloat bottomJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.6,-1.0), u_Head[3] * .7);\r\n\tbottomJaw = max(bottomJaw, -cubeSDF((p + u_Head[3] * vec3(0.0,-.4,-1.7)) * rotateMatX(45.0), u_Head[3] * 1.1));\r\n\tfloat combine = smin(base, topJaw, .04);\r\n\tcombine = smin(combine, bottomJaw, .08);\r\n\r\n\tfloat eyes = min(sphereSDF(p + u_Head[3] * vec3(.9,0.0,0.0), u_Head[3] * .3), sphereSDF(p + u_Head[3] * vec3(-0.9,0.0,0.0), u_Head[3] * .3));\r\n\tcombine = min(combine, eyes);\r\n\tfloat brows = min(udBox((p + u_Head[3] * vec3(.85,-0.35,0.0)) * rotateMatX(-20.0), u_Head[3] * vec3(.3,.2,.5)), udBox((p + u_Head[3] * vec3(-0.85,-0.35,0.0)) * rotateMatX(-20.0), u_Head[3] * vec3(.3,.2,.5)));\r\n\tcombine = min(combine, brows);\r\n\r\n\tfloat teeth = sdCappedCone((p + u_Head[3] * vec3(0.4,0.7,-1.8)) * rotateMatX(180.0), u_Head[3] * vec3(3.0,1.0,1.0));\r\n\tteeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(-0.4,0.7,-1.8)) * rotateMatX(180.0), u_Head[3] * vec3(3.0,1.0,1.0)));\r\n\tteeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(-0.4,0.7,-1.3)) * rotateMatX(180.0), u_Head[3] * vec3(2.7,1.0,1.0)));\r\n\tteeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(0.4,0.7,-1.3)) * rotateMatX(180.0), u_Head[3] * vec3(2.7,1.0,1.0)));\r\n\tcombine = min(combine, teeth);\r\n\treturn combine;\r\n}\r\n\r\nfloat trollHeadSDF(vec3 p) {\r\n\tp = p * rotateMatY(-270.0);\r\n\tfloat base = sphereSDF(p, u_Head[3]);\r\n\tfloat bottomJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.3,.62), u_Head[3] * 1.08);\r\n\tbottomJaw = max(bottomJaw, -cubeSDF(p + u_Head[3] * vec3(0.0,-1.0,.45), u_Head[3] * 1.3));\r\n\tfloat combine = smin(base, bottomJaw, .04);\r\n\tfloat teeth = sdCappedCone(p + u_Head[3] * vec3(0.65,-0.7,1.1), u_Head[3] * vec3(4.0,1.0,1.0));\r\n\tteeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(-0.65,-0.7,1.1), u_Head[3] * vec3(4.0,1.0,1.0)));\r\n\tteeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(-0.25,-0.2,1.4), u_Head[3] * vec3(3.4,.5,.5)));\r\n\tteeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(0.25,-0.2,1.4), u_Head[3] * vec3(3.4,.5,.5)));\r\n\tcombine = min(combine, teeth);\r\n\tfloat eyes = min(sphereSDF(p + u_Head[3] * vec3(.3,-0.5,0.7), u_Head[3] * .2), sphereSDF(p + u_Head[3] * vec3(-.3,-0.5,0.7), u_Head[3] * .2));\r\n\tfloat monobrow = udBox((p + u_Head[3] * vec3(0.0,-0.7,.65)) * rotateMatX(-20.0), u_Head[3] * vec3(.6,.2,.2));\r\n\tcombine = min(min(combine, eyes), monobrow);\r\n\treturn combine;\r\n}\r\n\r\n//~~~~HAND/FEET SDFs~~~~~//\r\n\r\n// For now, size is based on head size, but later make it the average joint size\r\nfloat clawHandSDF(vec3 p) {\r\n\tfloat base = udRoundBox(p, u_Head[3] * vec3(.3,.3,.1), .03);\r\n\tfloat fingees = sdCappedCone(p + u_Head[3] * vec3(-0.65,-0.7,1.1), u_Head[3] * vec3(1.0,1.0,1.0));\r\n\tfloat combine = min(base, fingees);\r\n\treturn sdConeSection(p, .1, .2,.1);\r\n}\r\n\r\n\r\nfloat armSDF(vec3 p) {\r\n\r\n\tfloat allLimbs = MAX_DIST;\r\n\tint incr = 0;\r\n\tint numLimbs = 0;\r\n\tfor(int j = 0; j < (u_jointNum*3); j = j + incr) {\r\n\tnumLimbs++;\r\n\t\t\r\n\tint count = 0;\r\n\t\r\n\t// NEED joint number to do the below operations...\r\n\t\r\n\tcount = int(u_JointID[numLimbs - 1]);\t\r\n\r\n\tfloat arm = MAX_DIST;\r\n\t// all joint positions for a LIM (jointNum * 3)\r\n\tfor(int i = j; i < (j+(count * 3)); i = i + 3) {\r\n\t\tvec3 pTemp = p + vec3(u_JointLoc[i], u_JointLoc[i+1], u_JointLoc[i+2]);\r\n\t\tarm = min(arm, sphereSDF(pTemp, u_JointRad[i/3]));\r\n\r\n\t}\r\n\r\n\t// for 3 * (jointNum(per limb) - 1), each joint until last one\r\n\tfloat segments = MAX_DIST;\r\n\tfor(int i = j; i < (j+((count-1) * 3)); i = i + 3) {\r\n\t\tvec3 point0 = vec3(u_JointLoc[i], u_JointLoc[i+1], u_JointLoc[i+2]);\r\n\t    vec3 point1 = vec3(u_JointLoc[i+3], u_JointLoc[i+4] ,u_JointLoc[i+5]);\r\n\t\tvec3 midpoint = vec3((point0.x + point1.x)/2.0, (point0.y + point1.y)/2.0, (point0.z + point1.z)/2.0);\r\n\t\tfloat len = distance(point0, point1);\r\n\t\tvec3 dir = point1 - point0;\r\n\t\tvec3 up = vec3(0.0,1.0,0.0);\r\n\t\tfloat angle = acos((dir.x*up.x + dir.y*up.y + dir.z*up.z)/(length(dir)*length(up)));\r\n\t\tangle = angle * (180.0/3.14159);\r\n\r\n\t\t// Essentially reverses rotation angle based on the location of the next joint\r\n\t\tfloat flip = -1.0;\r\n\t\tif((point0.x - point1.x) < 0.0) {\r\n\t\t\tflip *= -1.0;\r\n\t\t}\r\n\r\n\t\tfloat part = sdConeSection((p + midpoint) * rotateMatZ(flip * angle), len/2.0, u_JointRad[(i+3)/3],u_JointRad[i/3]);\r\n\t\tsegments = min(segments, part);\r\n\t}\r\n\r\n\tfloat combine = min(arm, segments); // this is one arm\r\n\tallLimbs = min(allLimbs, combine); //merge with all other limbs\r\n\r\n\tincr = count * 3;\r\n\r\n\t} \r\n\r\n\treturn allLimbs;\r\n}\r\n\r\n\r\nfloat spineSDF(vec3 p) {\r\n\tfloat spine = MAX_DIST;\r\n\tfor (int i = 0; i < u_SpineLoc.length(); i += 3) {\r\n\t\tif (u_SpineLoc[i] == 0. && u_SpineLoc[i+1] == 0. && u_SpineLoc[i+2] == 0.) continue;\r\n\t\tvec3 pTemp = p + vec3(u_SpineLoc[i], u_SpineLoc[i+1], u_SpineLoc[i+2]);\r\n\t\tspine = smin(spine, sphereSDF(pTemp, u_SpineRad[i/3]), 0.06);\r\n\t}\r\n\treturn spine;\r\n}\r\n\r\n// OVERALL SCENE SDF -- rotates about z-axis (turn-table style)\r\nfloat sceneSDF(vec3 p) {\r\n\tp += vec3(0, 0, 0);\r\n\t// p = p * rotateMatY(u_Time) ; // rotates creature\r\n\r\n\tif(u_Head[4] == 0.0) {\r\n\t\theadType = bugHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));\r\n\t}\t\r\n\telse if(u_Head[4] == 1.0){\r\n\t\theadType = dinoHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));\r\n\t}\t\r\n\telse if(u_Head[4] == 2.0){\r\n\t\theadType = trollHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));\r\n\t}\r\n\treturn smin(spineSDF(p), headType, 0.08);\r\n\t//return armSDF(p);\r\n}\r\n\r\n//~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//\r\nfloat march(vec3 rayOrigin, vec3 direction) {\r\n\tfloat dist = MIN_DIST;\r\n\tfor(int i = 0; i < MAX_STEPS; i++) {\r\n\t\tvec3 pos = rayOrigin + dist * direction;\r\n\t\tfloat dt = sceneSDF(pos);\r\n\t\tif(dt < EPSILON) {\r\n\t\t\treturn dist;\r\n\t\t}\r\n\t\tdist += dt;\r\n\t\tif(dist >= MAX_DIST) {\r\n\t\t\treturn MAX_DIST;\r\n\t\t}\r\n\t}\r\n\treturn MAX_DIST;\r\n}\r\n\r\nvec3 normal(vec3 p) {\r\n\tfloat gradX = sceneSDF(vec3(p.x + EPSILON, p.y, p.z)) - sceneSDF(vec3(p.x - EPSILON, p.y, p.z));\r\n\tfloat gradY = sceneSDF(vec3(p.x, p.y + EPSILON, p.z)) - sceneSDF(vec3(p.x, p.y - EPSILON, p.z));\r\n\tfloat gradZ = sceneSDF(vec3(p.x, p.y, p.z + EPSILON)) - sceneSDF(vec3(p.x, p.y, p.z - EPSILON));\r\n\treturn normalize(vec3(gradX, gradY, gradZ));\r\n}\r\n\r\nvec3 rayDirection(float fieldOfView, vec2 size, vec2 fragCoord) {\r\n    vec2 xy = fragCoord - size / 2.0;\r\n    float z = size.y / tan(radians(fieldOfView) / 2.0);\r\n    return normalize(vec3(xy, -z));\r\n}\r\n\r\nmat4 viewMatrix(vec3 eye, vec3 center, vec3 up) {\r\n    vec3 f = normalize(center - eye);\r\n    vec3 s = normalize(cross(f, up));\r\n    vec3 u = cross(s, f);\r\n    return mat4(\r\n        vec4(s, 0.0),\r\n        vec4(u, 0.0),\r\n        vec4(-f, 0.0),\r\n        vec4(0.0, 0.0, 0.0, 1)\r\n    );\r\n} \r\n\r\nvoid main() {\r\n\tvec3 eye = -u_View[3].xyz;\r\n\tvec3 up = u_View[1].xyz;\r\n\tvec3 forward = u_View[2].xyz;\r\n\tvec3 right = u_View[0].xyz;\r\n\r\n\tvec2 coord = vec2(-fs_Pos.x * u_Resolution.x/u_Resolution.y, -fs_Pos.y);\r\n\tvec3 dest = eye + forward + right * coord[0] + up * coord[1];\r\n\t// vec3 viewDir = rayDirection(20.0, normalize(u_Resolution), coord);\r\n    \r\n    // mat4 viewToWorld = u_View;//viewMatrix(eye, vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0));\r\n    \r\n    vec3 dir = normalize(eye - dest); //(viewToWorld * vec4(viewDir, 0.0)).xyz;\r\n\t\r\n\tfloat distance = march(eye, dir);\r\n\r\n\tif(distance >= MAX_DIST - 2.0 * EPSILON) {\r\n\t\t// Colors background with a gradient!\r\n\t\tvec4 col1 = vec4(0.0,0.0,1.0,1.0);\r\n\t\tvec4 col2 = vec4(0.0,1.0,0.0,1.0);\r\n\t\tout_Col = vec4(col1 * (gl_FragCoord.y / u_Resolution.y)) + vec4(col2 * (2.4 - (gl_FragCoord.y / u_Resolution.y)));\r\n\t\treturn;\r\n\t}\r\n\r\n\t// Colors geometry with Lambert Shader\r\n\t vec3 p = eye + distance * dir;\r\n\t vec3 lightVec = vec3(17.0,40.0,50.0) - p;\r\n\t float diffuseTerm = dot(normalize(normal(p)), normalize(lightVec));\r\n\t diffuseTerm = clamp(diffuseTerm, 0.0, 1.0);\r\n\t float ambientTerm = 0.2;\r\n\t float lightIntensity = diffuseTerm + ambientTerm;\r\n\r\n\t out_Col = vec4(vec3(1.0,0.0,0.0) * lightIntensity, 1.0) ;\r\n\r\n\t//  out_Col = vec4(0.5 * (dir + vec3(1,1,1)), 1.);\r\n}\r\n"
+module.exports = "#version 300 es\r\n\r\nprecision highp float;\r\n\r\nin vec4 fs_Pos;\r\nout vec4 out_Col;\r\n\r\nuniform vec2 u_Resolution;\r\nuniform float u_Time;\r\nuniform mat4 u_View;\r\n\r\nuniform float u_SpineLoc[24];\r\nuniform float u_SpineRad[8];\r\n\r\nuniform float u_Head[5]; // indices 0-2 are positions, 3 is radius\r\nuniform float u_AppenData[50];\r\nuniform int u_AppenBools[50];\r\nuniform float u_AppenRad[50];\r\n\r\nuniform int u_LimbLengths[8];  //size is number of limbs\r\nuniform float u_JointLoc[90]; //size is number of joints * 3\r\nuniform float u_JointRad[30]; //size is number of joints\r\n\r\nuniform vec3 u_Color1;\r\nuniform vec3 u_Color2;\r\nuniform vec3 u_Color3;\r\nuniform vec3 u_Color4;\r\n\r\nuniform mat4[100] u_Rotations;\r\nuniform mat4[50] u_AppenRots;\r\n\r\nfloat headType;\r\n\r\nconst int MAX_STEPS = 300;\r\nconst float MIN_DIST = 0.0001;\r\nconst float MAX_DIST = 100.0;\r\nconst float EPSILON = 0.002;\r\n\r\nuniform sampler2D tex_Color1;\r\nuniform sampler2D tex_Color2;\r\n\r\nvec3 eyePos;\r\nfloat eyeSize;\r\n\r\n// int numAppen = 0; // for appendages\r\n// int armsNow = 0; // 0 for false, 1 for true\r\n\r\nmat3 rotateMatX(float angle) {\r\n\tfloat rad = radians(angle);\r\n\treturn mat3(\r\n\t\tvec3(1.0, 0.0, 0.0),\r\n\t\tvec3(0.0, cos(rad), -sin(rad)),\r\n\t\tvec3(0.0, sin(rad), cos(rad))\r\n\t);\r\n}\r\n\r\nmat3 rotateMatY(float angle) {\r\n\tfloat rad = radians(angle);\r\n\treturn mat3(\r\n\t\tvec3(cos(rad), 0.0, sin(rad)),\r\n\t\tvec3(0.0, 1.0, 0.0),\r\n\t\tvec3(-sin(rad), 0.0, cos(rad))\r\n\t);\r\n}\r\n\r\nmat3 rotateMatZ(float angle) {\r\n\tfloat rad = radians(angle);\r\n\treturn mat3(\r\n\t\tvec3(cos(rad), -sin(rad), 0.0),\r\n\t\tvec3(sin(rad), cos(rad), 0.0),\r\n\t\tvec3(0.0, 0.0, 1.0)\r\n\t);\r\n}\r\n\r\nmat3 scaleMat(float amt) {\r\n\treturn mat3(\r\n\t\tvec3(amt, 0.0, 0.0),\r\n\t\tvec3(0.0, amt, 0.0),\r\n\t\tvec3(0.0, 0.0, amt)\r\n\t);\r\n}\r\n\r\n// polynomial smooth min\r\nfloat smin( float a, float b, float k ) {\r\n    float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );\r\n    return mix( b, a, h ) - k*h*(1.0-h);\r\n}\r\n\r\nfloat sminExp( float a, float b, float k ) {\r\n    float res = exp( -k*a ) + exp( -k*b );\r\n    return -log( res )/k;\r\n}\r\n\r\nfloat sminPow( float a, float b, float k ) {\r\n    a = pow( a, k ); b = pow( b, k );\r\n    return pow( (a*b)/(a+b), 1.0/k );\r\n} \r\n\r\n\r\n\r\nfloat sphereSDF(vec3 p, float r) {\r\n\t\treturn length(p) - r;\r\n}\r\n\r\nfloat cubeSDF( vec3 p, float r) {\r\n     vec3 d = abs(p) - vec3(r, r, r);   \r\n     float insideDistance = min(max(d.x, max(d.y, d.z)), 0.0);\r\n     float outsideDistance = length(max(d, 0.0));  \r\n     return insideDistance + outsideDistance;\r\n }\r\n\r\n float sdCappedCylinder( vec3 p, vec2 h ) {\r\n  vec2 d = abs(vec2(length(p.xz),p.y)) - h;\r\n  return min(max(d.x,d.y),0.0) + length(max(d,0.0));\r\n}\r\n\r\nfloat udBox( vec3 p, vec3 b ) {\r\n  return length(max(abs(p)-b,0.0));\r\n}\r\n\r\nfloat sdCone( vec3 p, vec2 c ) {\r\n    // c must be normalized\r\n    float q = length(p.xy);\r\n    return dot(c,vec2(q,p.z));\r\n}\r\n\r\nfloat sdCappedCone( in vec3 p, in vec3 c ) {\r\n    vec2 q = vec2( length(p.xz), p.y );\r\n    vec2 v = vec2( c.z*c.y/c.x, -c.z );\r\n    vec2 w = v - q;\r\n    vec2 vv = vec2( dot(v,v), v.x*v.x );\r\n    vec2 qv = vec2( dot(v,w), v.x*w.x );\r\n    vec2 d = max(qv,0.0)*qv/vv;\r\n    return sqrt( dot(w,w) - max(d.x,d.y) ) * sign(max(q.y*v.x-q.x*v.y,w.y));\r\n}\r\n\r\nfloat udRoundBox( vec3 p, vec3 b, float r ) {\r\n  return length(max(abs(p)-b,0.0))-r;\r\n}\r\n\r\nfloat sdCapsule( vec3 p, vec3 a, vec3 b, float r ) {\r\n    vec3 pa = p - a, ba = b - a;\r\n    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );\r\n    return length( pa - ba*h ) - r;\r\n}\r\n\r\n// a better capped cone function (like what)\r\nfloat sdConeSection( in vec3 p, in float h, in float r1, in float r2 ) {\r\n    float d1 = -p.y - h;\r\n    float q = p.y - h;\r\n    float si = 0.5*(r1-r2)/h;\r\n    float d2 = max( sqrt( dot(p.xz,p.xz)*(1.0-si*si)) + q*si - r2, q );\r\n    return length(max(vec2(d1,d2),0.0)) + min(max(d1,d2), 0.);\r\n}\r\n\r\n//~~~~~HEAD SDFs~~~~~///\r\nfloat bugHeadSDF(vec3 p) {\r\n\tp = p * rotateMatY(-90.0);\r\n\tfloat base = sphereSDF(p, u_Head[3]);\r\n \tfloat eyes = min(sphereSDF(p + u_Head[3] * vec3(0.55,-0.35,-.71), u_Head[3] * .2), sphereSDF(p + u_Head[3] * vec3(-0.55,-0.35,-.71), u_Head[3] * .2));\r\n\tfloat mandibleBase = sdCappedCylinder(p + u_Head[3] * vec3(0.0,0.001,-.9), u_Head[3] * vec2(1.2, 0.1));\r\n\tfloat mandibles = max(mandibleBase, -sphereSDF(p + u_Head[3] * vec3(0.0,0.0,-0.60), .7 * u_Head[3]));\r\n\tmandibles = max(mandibles, -sphereSDF(p + u_Head[3] * vec3(0.0,0.0,-1.70), .7 * u_Head[3]));\r\n\tfloat head = smin(min(base, eyes), mandibles, .05);\r\n\treturn head;\r\n}\r\n\r\nfloat dinoHeadSDF(vec3 p) {\r\n\tp = p * rotateMatY(-90.0);\r\n\tfloat base = sphereSDF(p, u_Head[3]);\r\n\tfloat topJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.3,-1.4), u_Head[3] * 1.08);\r\n\ttopJaw = max(topJaw, -cubeSDF(p + u_Head[3] * vec3(0.0,1.4,-1.4), u_Head[3] * 1.2));\r\n\tfloat bottomJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.6,-1.0), u_Head[3] * .7);\r\n\tbottomJaw = max(bottomJaw, -cubeSDF((p + u_Head[3] * vec3(0.0,-.4,-1.7)) * rotateMatX(45.0), u_Head[3] * 1.1));\r\n\tfloat combine = smin(base, topJaw, .04);\r\n\tcombine = smin(combine, bottomJaw, .08);\r\n\r\n\tfloat eyes = min(sphereSDF(p + u_Head[3] * vec3(.9,0.0,0.0), u_Head[3] * .3), sphereSDF(p + u_Head[3] * vec3(-0.9,0.0,0.0), u_Head[3] * .3));\r\n\tcombine = min(combine, eyes);\r\n\tfloat brows = min(udBox((p + u_Head[3] * vec3(.85,-0.35,0.0)) * rotateMatX(-20.0), u_Head[3] * vec3(.3,.2,.5)), udBox((p + u_Head[3] * vec3(-0.85,-0.35,0.0)) * rotateMatX(-20.0), u_Head[3] * vec3(.3,.2,.5)));\r\n\tcombine = min(combine, brows);\r\n\r\n\tfloat teeth = sdCappedCone((p + u_Head[3] * vec3(0.4,0.7,-1.8)) * rotateMatX(180.0), u_Head[3] * vec3(3.0,1.0,1.0));\r\n\tteeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(-0.4,0.7,-1.8)) * rotateMatX(180.0), u_Head[3] * vec3(3.0,1.0,1.0)));\r\n\tteeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(-0.4,0.7,-1.3)) * rotateMatX(180.0), u_Head[3] * vec3(2.7,1.0,1.0)));\r\n\tteeth = min(teeth, sdCappedCone((p + u_Head[3] * vec3(0.4,0.7,-1.3)) * rotateMatX(180.0), u_Head[3] * vec3(2.7,1.0,1.0)));\r\n\tcombine = min(combine, teeth);\r\n\treturn combine;\r\n}\r\n\r\nfloat trollHeadSDF(vec3 p) {\r\n\tp = p * rotateMatY(-270.0);\r\n\tfloat base = sphereSDF(p, u_Head[3]);\r\n\tfloat bottomJaw = sphereSDF(p + u_Head[3] * vec3(0.0,0.3,.62), u_Head[3] * 1.08);\r\n\tbottomJaw = max(bottomJaw, -cubeSDF(p + u_Head[3] * vec3(0.0,-1.0,.45), u_Head[3] * 1.3));\r\n\tfloat combine = smin(base, bottomJaw, .04);\r\n\tfloat teeth = sdCappedCone(p + u_Head[3] * vec3(0.65,-0.7,1.1), u_Head[3] * vec3(4.0,1.0,1.0));\r\n\tteeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(-0.65,-0.7,1.1), u_Head[3] * vec3(4.0,1.0,1.0)));\r\n\tteeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(-0.25,-0.2,1.4), u_Head[3] * vec3(3.4,.5,.5)));\r\n\tteeth = min(teeth, sdCappedCone(p + u_Head[3] * vec3(0.25,-0.2,1.4), u_Head[3] * vec3(3.4,.5,.5)));\r\n\tcombine = min(combine, teeth);\r\n\tfloat eyes = min(sphereSDF(p + u_Head[3] * vec3(.3,-0.5,0.7), u_Head[3] * .2), sphereSDF(p + u_Head[3] * vec3(-.3,-0.5,0.7), u_Head[3] * .2));\r\n\tfloat monobrow = udBox((p + u_Head[3] * vec3(0.0,-0.7,.65)) * rotateMatX(-20.0), u_Head[3] * vec3(.6,.2,.2));\r\n\tcombine = min(min(combine, eyes), monobrow);\r\n\treturn combine;\r\n}\r\n\r\n//~~~~HAND/FEET SDFs~~~~~//\r\n\r\n// For now, size is based on head size, but later make it the average joint size\r\nfloat clawFootSDF(vec3 p, float size) {\r\n\tsize = size * 2.0;\r\n\tfloat base = udRoundBox(p, size * vec3(.6,.6,.3), .001);\r\n\tfloat fingees = sdConeSection((p + size * vec3(0.5,-0.9,0.3)) * rotateMatZ(-20.0), size * 1.0, size * .3, size * .05);\r\n\tfingees = min(fingees, sdConeSection((p + size * vec3(-0.5,-0.9,0.3)) * rotateMatZ(20.0), size * 1.0, size * .3, size * .05));\r\n    fingees = min(fingees, sdConeSection(p + size * vec3(0.0,-1.1,0.3), size * 1.0, size * .3, size * .05));\r\n\tfloat combine = smin(base, fingees, .13); // final foot\r\n\treturn combine;\r\n}\r\n\r\n\r\nfloat handSDF(vec3 p, float size) {\r\n\t//float size = u_Head[3] / 1.5;\r\n\t//size = 1.0;\r\n\tfloat base = udRoundBox(p, size * vec3(.6,.6,.2), .08);\r\n\tfloat fingee1 = sdConeSection((p + size * vec3(1.1,-0.7,0.0)) * rotateMatZ(-30.0), size * 1.0, size * .5, size * .2);\r\n\tfloat fingee2 = sdConeSection((p + size * vec3(0.45,-1.9,0.0)) * rotateMatZ(0.0), size * 1.0, size * .5, size * .2);\r\n\tfloat fingee3 = sdConeSection((p + size * vec3(-0.45,-1.9,0.0)) * rotateMatZ(0.0), size * 1.0, size * .5, size * .2);\r\n\tfingee1 = min(fingee1, fingee2);\r\n\tfingee1 = min(fingee1, fingee3);\r\n\tfloat combine = smin(base, fingee1, .09);\r\n\treturn combine;\r\n}\r\n\r\nfloat appendagesSDF(vec3 p) {\r\n\tfloat all = MAX_DIST;\r\n\tfloat angle;\r\n\t//angle to slightly offset each foot\r\n\tfloat angle1 = -35.0;\r\n\tfloat angle2 = 35.0;\r\n\r\n\tint armsNow = 0;\r\n\tint numAppen = 0;\r\n\r\n\tfor(int i = 0; i < int(u_AppenData[0]); i++) {\r\n\t\tint start = (i * 3) + 1;\r\n\t\tvec3 offset = vec3(u_AppenData[start], u_AppenData[start + 1], u_AppenData[start + 2]);\r\n\r\n\t\tif((i % 2) == 0) {\r\n\t\t\tangle = angle1;\r\n\t\t}\r\n\t\telse {\r\n\t\t\tangle = angle2;\r\n\t\t}\r\n\t\tfloat foot;\r\n\r\n\t\tif(u_AppenBools[numAppen] == 1) {\r\n\t\tarmsNow = 1;\r\n\t\t}\r\n\r\n\t\tif(armsNow == 0) {\r\n\t\t\tfoot = clawFootSDF((p + offset)*rotateMatZ(90.0) * rotateMatY(90.0) * rotateMatZ(angle), u_AppenRad[numAppen]);\r\n\t\t}\r\n\t\telse {\r\n\t\t\tvec3 q = (inverse(u_AppenRots[numAppen]) * vec4((p + offset),1.0)).xyz;\r\n\t\t\tfoot = handSDF(q* rotateMatZ(180.0),u_AppenRad[numAppen]);\r\n\t\t}\r\n\r\n\t\t// //if(u_AppenBools[numAppen] != 0.0) {\r\n\t\t// if((numAppen % 2) == 0) {\r\n\t\t// \tfoot = clawFootSDF((p + offset)*rotateMatZ(90.0) * rotateMatY(90.0) * rotateMatZ(angle));\t\t\r\n\t\t// }\r\n\t\t// else {\r\n\t\t// \tfoot = handSDF((p + offset) * rotateMatZ(135.0));\r\n\t\t// }\r\n\t\t// else if(u_AppenBools[2] == 0){\t\t\t\r\n\t\t// \t\r\n\t\t// }\r\n\r\n\t\tnumAppen = numAppen + 1;\r\n\r\n\t\t// if((p + offset).y == 100.0) { //should be 0, but does this work\r\n\t\t// \tfoot = handSDF((p + offset) * rotateMatZ(135.0));\r\n\t\t// }\r\n\t\t// else {\r\n\t\t// \tfoot = clawFootSDF((p + offset)*rotateMatZ(90.0) * rotateMatY(90.0) * rotateMatZ(angle));\r\n\t\t// }\r\n\t\tall = min(all, foot);\r\n\t}\r\n\r\n\treturn all;\r\n}\r\n\r\nfloat armSDF(vec3 p) {\r\n\r\n\tint countSegs = 0;\r\n\r\n\tfloat allLimbs = MAX_DIST;\r\n\tint incr = 0;\r\n\tint numLimbs = 0;\r\n\tint jointNum = 0;\r\n\tfor (int i = 0; i < u_LimbLengths.length(); i++) {\r\n\t\tjointNum += u_LimbLengths[i];\r\n\t}\r\n\r\n\t//this is for each limb\r\n\tfor(int j = 0; j < (jointNum*3); j = j + incr) {\r\n\tnumLimbs++;\r\n\t\t\r\n\tint count = 0;\r\n\t\r\n\t// NEED joint number to do the below operations...\r\n\t\r\n\t//count is number of joints in this limb\r\n\tcount = int(u_LimbLengths[numLimbs - 1]);\t\r\n\r\n\tfloat arm = MAX_DIST;\r\n\t// all joint positions for a LIM (jointNum * 3)\r\n\tfor(int i = j; i < (j+(count * 3)); i = i + 3) {\r\n\t\tvec3 pTemp = p + vec3(u_JointLoc[i], u_JointLoc[i+1], u_JointLoc[i+2]);\r\n\t\tarm = min(arm, sphereSDF(pTemp, u_JointRad[i/3]));\r\n\r\n\t}\r\n\r\n\t// for 3 * (jointNum(per limb) - 1), each joint until last one\r\n\tfloat segments = MAX_DIST;\r\n\t\r\n\tfor(int i = j; i < (j+((count-1) * 3)); i = i + 3) {\r\n\t\tvec3 point0 = vec3(u_JointLoc[i], u_JointLoc[i+1], u_JointLoc[i+2]);\r\n\t    vec3 point1 = vec3(u_JointLoc[i+3], u_JointLoc[i+4] ,u_JointLoc[i+5]);\r\n\t\tvec3 midpoint = vec3((point0.x + point1.x)/2.0, (point0.y + point1.y)/2.0, (point0.z + point1.z)/2.0);\r\n\t\tfloat len = distance(point0, point1);\r\n\t\t\r\n\t\tvec3 dir = point1 - point0; //dir is correct\r\n\t\t\r\n\t\t\r\n\r\n\t\tmat4 outMat4 = u_Rotations[countSegs];\r\n\t\tcountSegs++;\r\n\r\n\t\tvec3 q = (inverse(outMat4) * vec4((p + midpoint),1.0)).xyz;\r\n\r\n\r\n\r\n\t\tfloat part = sdConeSection(q, len/2.0, u_JointRad[(i+3)/3],u_JointRad[i/3]);\r\n\t\tsegments = min(segments, part);\r\n\t}\r\n\r\n\tfloat combine = smin(arm, segments, .2); // this is one arm\r\n\tallLimbs = min(allLimbs, combine); //merge with all other limbs\r\n\r\n\tincr = count * 3;\r\n\r\n\t} \r\n\r\n\treturn allLimbs;\r\n}\r\n\r\n\r\nfloat spineSDF(vec3 p) {\r\n\tfloat spine = MAX_DIST;\r\n\tfor (int i = 0; i < u_SpineLoc.length(); i += 3) {\r\n\t\tif (u_SpineLoc[i] == 0. && u_SpineLoc[i+1] == 0. && u_SpineLoc[i+2] == 0.) continue;\r\n\t\tvec3 pTemp = p + vec3(u_SpineLoc[i], u_SpineLoc[i+1], u_SpineLoc[i+2]);\r\n\t\tspine = smin(spine, sphereSDF(pTemp, u_SpineRad[i/3]), 0.06);\r\n\t}\r\n\treturn spine;\r\n}\r\n\r\n// OVERALL SCENE SDF -- rotates about z-axis (turn-table style)\r\nfloat sceneSDF(vec3 p) {\r\n\tp += vec3(0, 0, 0);\r\n\t// p = p * rotateMatY(u_Time) ; // rotates creature\r\n\r\n\tif(u_Head[4] == 0.0) {\r\n\t\theadType = bugHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));\r\n\t}\t\r\n\telse if(u_Head[4] == 1.0){\r\n\t\theadType = dinoHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));\r\n\t}\t\r\n\telse if(u_Head[4] == 2.0){\r\n\t\theadType = trollHeadSDF(p + vec3(u_Head[0], u_Head[1], u_Head[2]));\r\n\t}\r\n\tfloat dist = smin(spineSDF(p), headType, .1);\r\n\treturn smin(smin(armSDF(p), appendagesSDF(p), .2), dist, .1);\r\n\t\r\n\t//return min(handSDF(p+ vec3(-1.0,0.0,0.0), u_AppenRad[0]), clawFootSDF(p + vec3(1.0,0.0,0.0), u_AppenRad[0]));\r\n}\r\n\r\n//~~~~~~~~~~~~~~~~~~~~ACTUAL RAY MARCHING STUFF~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//\r\nfloat march(vec3 rayOrigin, vec3 direction) {\r\n\tfloat dist = MIN_DIST;\r\n\tfor(int i = 0; i < MAX_STEPS; i++) {\r\n\t\tvec3 pos = rayOrigin + dist * direction;\r\n\t\tfloat dt = sceneSDF(pos);\r\n\t\tif(dt < EPSILON) {\r\n\t\t\treturn dist;\r\n\t\t}\r\n\t\tdist += dt;\r\n\t\tif(dist >= MAX_DIST) {\r\n\t\t\treturn MAX_DIST;\r\n\t\t}\r\n\t}\r\n\treturn MAX_DIST;\r\n}\r\n\r\nvec3 normal(vec3 p) {\r\n\tfloat gradX = sceneSDF(vec3(p.x + EPSILON, p.y, p.z)) - sceneSDF(vec3(p.x - EPSILON, p.y, p.z));\r\n\tfloat gradY = sceneSDF(vec3(p.x, p.y + EPSILON, p.z)) - sceneSDF(vec3(p.x, p.y - EPSILON, p.z));\r\n\tfloat gradZ = sceneSDF(vec3(p.x, p.y, p.z + EPSILON)) - sceneSDF(vec3(p.x, p.y, p.z - EPSILON));\r\n\treturn normalize(vec3(gradX, gradY, gradZ));\r\n}\r\n\r\nvec3 rayDirection(float fieldOfView, vec2 size, vec2 fragCoord) {\r\n    vec2 xy = fragCoord - size / 2.0;\r\n    float z = size.y / tan(radians(fieldOfView) / 2.0);\r\n    return normalize(vec3(xy, -z));\r\n}\r\n\r\nmat4 viewMatrix(vec3 eye, vec3 center, vec3 up) {\r\n    vec3 f = normalize(center - eye);\r\n    vec3 s = normalize(cross(f, up));\r\n    vec3 u = cross(s, f);\r\n    return mat4(\r\n        vec4(s, 0.0),\r\n        vec4(u, 0.0),\r\n        vec4(-f, 0.0),\r\n        vec4(0.0, 0.0, 0.0, 1)\r\n    );\r\n}\r\n\r\nvec3 triplanar(sampler2D tex, float scale, vec3 norm, vec3 pos) {\r\n\tvec3 xy = texture(tex, pos.xy * scale).rgb;\r\n\tvec3 xz = texture(tex, pos.xz * scale).rgb;\r\n\tvec3 yz = texture(tex, pos.yz * scale).rgb;\r\n\treturn mix(mix(xz, yz, norm.x), xy, norm.z);\r\n}\r\n\r\nvoid main() {\r\n\tvec3 eye = -u_View[3].xyz;\r\n\tvec3 up = u_View[1].xyz;\r\n\tvec3 forward = u_View[2].xyz;\r\n\tvec3 right = u_View[0].xyz;\r\n\r\n\tvec2 coord = vec2(-fs_Pos.x * u_Resolution.x/u_Resolution.y, -fs_Pos.y);\r\n\tvec3 dest = eye + forward + right * coord[0] + up * coord[1];\r\n\t// vec3 viewDir = rayDirection(20.0, normalize(u_Resolution), coord);\r\n    \r\n    // mat4 viewToWorld = u_View;//viewMatrix(eye, vec3(0.0, 1.0, 0.0), vec3(0.0, 1.0, 0.0));\r\n    \r\n    vec3 dir = normalize(eye - dest); //(viewToWorld * vec4(viewDir, 0.0)).xyz;\r\n\t\r\n\tfloat distance = march(eye, dir);\r\n\r\n\tif(distance >= MAX_DIST - 2.0 * EPSILON) {\r\n\t\t// Colors background with a gradient!\r\n\t\tvec4 col1 = vec4(0.0,0.0,1.0,1.0);\r\n\t\tvec4 col2 = vec4(0.0,1.0,0.0,1.0);\r\n\t\tout_Col = vec4(col1 * (gl_FragCoord.y / u_Resolution.y)) + vec4(col2 * (2.4 - (gl_FragCoord.y / u_Resolution.y)));\r\n\t\t//out_Col = texture(tex_Color, gl_FragCoord.xy/u_Resolution);\r\n\t\treturn;\r\n\t}\r\n\r\n\t// Colors geometry with Lambert Shader\r\n\t vec3 p = eye + distance * dir;\r\n\t vec3 norm = normalize(normal(p));\r\n\t vec3 lightVec = vec3(17.0,40.0,50.0) - p;\r\n\t float alpha = dot(norm, vec3(0, 1, 0));\r\n\t if (alpha < 0.) alpha = 0.;\r\n\t vec3 texture1 = triplanar(tex_Color1, 1., norm, p);\r\n\t texture1 = mix(u_Color1, u_Color2, texture1.r);\r\n\t vec3 texture2 = triplanar(tex_Color2, 1., norm, p);\r\n\t texture2 = mix(u_Color3, u_Color4, texture2.r);\r\n\t vec3 color = mix(texture1, texture2, alpha);\r\n\t float diffuseTerm = dot(norm, normalize(lightVec));\r\n\t diffuseTerm = clamp(diffuseTerm, 0.0, 1.0);\r\n\t float ambientTerm = 0.2;\r\n\t float lightIntensity = diffuseTerm + ambientTerm;\r\n\r\n\t out_Col = vec4(color * lightIntensity, 1.0) ;\r\n\r\n\t//  out_Col = vec4(0.5 * (dir + vec3(1,1,1)), 1.);\r\n}\r\n"
 
 /***/ })
 /******/ ]);
