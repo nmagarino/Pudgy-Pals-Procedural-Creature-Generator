@@ -32,6 +32,7 @@ class Limb {
     for (let i = 1; i < numJoints; i++) {
       let yaw = (Math.random()) * Math.PI * 0.8 + Math.PI;
       let pitch = (Math.random() * 2 - 1) * Math.PI * 0.35;
+      if (!this.isLeg) pitch -= 0.5;
       let r = this.jointRadii[i-1]/0.2 * (Math.random() * 0.5 + 0.2 + this.jointRadii[i-1]/2);
 
       let dx = r * Math.sin(pitch) * Math.cos(yaw);

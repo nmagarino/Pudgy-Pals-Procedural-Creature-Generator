@@ -283,7 +283,6 @@ class ShaderProgram {
   setAppenBools(data : number[]) {
     this.use();
     if(this.unifAppenBools !== -1) {
-      console.log("In ShaderProg: " + data);
       gl.uniform1iv(this.unifAppenBools, data);
     }
   }

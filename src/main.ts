@@ -68,20 +68,16 @@ function generate() {
     for (let i: number = 0; i < creature.limbs.length; i++) {
       if (armsNow) {
         appenBools.push(1);
-        console.log("hand");
         continue;
       }
       if (creature.limbs[i].isLeg) {
         appenBools.push(0);
-        console.log("foot");
       }
       else {
         armsNow = true;
         appenBools.push(1);
-        console.log("hand");
       }
     }
-    console.log(appenBools);
     raymarchShader.setAppenBools(appenBools);
 }
 
@@ -161,20 +157,16 @@ function main() {
     for (let i: number = 0; i < creature.limbs.length; i++) {
       if (armsNow) {
         appenBools.push(1);
-        console.log("hand");
         continue;
       }
       if (creature.limbs[i].isLeg) {
         appenBools.push(0);
-        console.log("foot");
       }
       else {
         armsNow = true;
         appenBools.push(1);
-        console.log("hand");
       }
     }
-    console.log(appenBools);
     raymarchShader.setAppenBools(appenBools);
 
 

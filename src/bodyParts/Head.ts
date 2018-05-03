@@ -33,7 +33,6 @@ class Head {
     }
 
     avg = sum / spineRadii.length;
-    console.log(avg);
 
     this.headData.push(avg);
     
