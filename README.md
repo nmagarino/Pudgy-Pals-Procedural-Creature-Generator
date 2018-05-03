@@ -1,4 +1,5 @@
 
+
 # CIS-566 Final Project
 
 # Final Write-Up
@@ -22,6 +23,8 @@ First, we randomize or read from user input the number of pairs of limbs.  Each 
 Hands and Feet are hard coded SDFs that are placed at the position of the final joint in each limb.  Their size is based on the radii of the final joint in the respective limb.  Each foot is rotated slightly off from the x-axis on either side.  Each hand is rotated based on the final limb rotation in each limb.  Integers acting as boolean values are passed into the shader to determine whether a limb will generate a hand or a foot at the end (0 for foot, 1 for hand).
 
 > TEXTURING
+
+The creature generator selects 2 grayscale surface textures and generates 4 random colors. In the shader, after the normal of the creature at a point is determined, we use triplanar mapping to seamlessly map both textures in 3D space. Both textures are then used as an alpha to blend between 2 of the 4 colors. This results in 2 randomly colored textures that can be applied to the creature accross its surface. To add interest, we use the absolute value of the dot product of the surface normal of the creature to blend between textures such that one texture appears on upward-facing surfaces on the creature.
 
 # Midpoint Milestone
  
