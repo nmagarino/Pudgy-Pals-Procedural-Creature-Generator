@@ -1,5 +1,6 @@
 
 
+
 # CIS-566 Final Project
 
 # Final Write-Up
@@ -39,30 +40,39 @@ There are some visual artifacts on smaller SDFs, such as the cone-shaped teeth o
 Here are some of our favorite creatures that we created!
 
 A Good Boy:
+
 ![](agoodboyBoy.PNG)
 
 Albatross Jim:
+
 ![](albatrossJim.PNG)
 
 Chicken:
+
 ![](chicken.PNG)
 
 Doctor Levitz M.D.:
+
 ![](doctorLevitzMD.PNG)
 
 Momma Han:
+
 ![](hRmmmBoy.PNG)
 
 Spike:
+
 ![](puppyBOy.PNG)
 
 Sexy Legs:
+
 ![](sexylegs.PNG)
 
 "Mom said it's my turn to play the X-box!":
+
 ![](skreeBoy.PNG)
 
 Winchester:
+
 ![](veinyBoy.PNG)
 
 # Midpoint Milestone
