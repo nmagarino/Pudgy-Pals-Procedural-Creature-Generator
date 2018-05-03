@@ -114,12 +114,12 @@ function main() {
 
   //Load Textures
   textures = [];
-  textures.push(new Texture('./resources/textures/noise.bmp'));
-  textures.push(new Texture('./resources/textures/fleshy.bmp'));
-  textures.push(new Texture('./resources/textures/furry.bmp'));
-  textures.push(new Texture('./resources/textures/scaly1.bmp'));
-  textures.push(new Texture('./resources/textures/scaly2.bmp'));
-  textures.push(new Texture('./resources/textures/veiny.bmp'));
+  textures.push(new Texture('src/resources/textures/noise.bmp'));
+  textures.push(new Texture('src/resources/textures/fleshy.bmp'));
+  textures.push(new Texture('src/resources/textures/furry.bmp'));
+  textures.push(new Texture('src/resources/textures/scaly1.bmp'));
+  textures.push(new Texture('src/resources/textures/scaly2.bmp'));
+  textures.push(new Texture('src/resources/textures/veiny.bmp'));
 
   screenQuad = new Square(vec3.fromValues(0, 0, 0));
   screenQuad.create();
