@@ -3410,12 +3410,12 @@ function main() {
     Object(__WEBPACK_IMPORTED_MODULE_5__globals__["b" /* setGL */])(gl);
     //Load Textures
     textures = [];
-    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('./resources/textures/noise.bmp'));
-    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('./resources/textures/fleshy.bmp'));
-    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('./resources/textures/furry.bmp'));
-    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('./resources/textures/scaly1.bmp'));
-    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('./resources/textures/scaly2.bmp'));
-    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('./resources/textures/veiny.bmp'));
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('src/resources/textures/noise.bmp'));
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('src/resources/textures/fleshy.bmp'));
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('src/resources/textures/furry.bmp'));
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('src/resources/textures/scaly1.bmp'));
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('src/resources/textures/scaly2.bmp'));
+    textures.push(new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_Texture__["a" /* default */]('src/resources/textures/veiny.bmp'));
     screenQuad = new __WEBPACK_IMPORTED_MODULE_3__geometry_Square__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 0, 0));
     screenQuad.create();
     const camera = new __WEBPACK_IMPORTED_MODULE_4__Camera__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 1, 2.01), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 1, 2));
