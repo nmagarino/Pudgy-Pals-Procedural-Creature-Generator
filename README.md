@@ -38,6 +38,33 @@ There are some visual artifacts on smaller SDFs, such as the cone-shaped teeth o
 
 Here are some of our favorite creatures that we created!
 
+A Good Boy:
+![](agoodboyBoy.PNG)
+
+Albatross Jim:
+![](albatrossJim.PNG)
+
+Chicken:
+![](chicken.PNG)
+
+Doctor Levitz M.D.:
+![](doctorLevitzMD.PNG)
+
+Momma Han:
+![](hRmmmBoy.PNG)
+
+Spike:
+![](puppyBOy.PNG)
+
+Sexy Legs:
+![](sexylegs.PNG)
+
+"Mom said it's my turn to play the X-box!":
+![](skreeBoy.PNG)
+
+Winchester:
+![](veinyBoy.PNG)
+
 # Midpoint Milestone
  
 So far we've basically met all of our milestones, finishing the spine class by week 1 and making progress on the limb class during week 2.  We've constructed our code from Nick's base code from the Implicit Surfaces homework (HW2).  
