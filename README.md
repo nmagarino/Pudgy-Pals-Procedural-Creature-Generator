@@ -18,7 +18,11 @@ The head is randomly chosen from amongst 3 types (or selected by the user). Its 
 
 > LIMBS
 
-First, we randomize or read from user input the number of pairs of limbs.  Each limb is generated starting from a metaball position on the spine.  Limbs are initally distributed uniformly accross the torso metaballs, but are then randomly offset within their buckets. Generation begins starting from the back of the creature, creating legs. The individual limbs are generated choosing a random number of joints and assigning joint positions by randomizing a spherical change in position from the previous joint. If the joint is a leg, its final joint will always be at y = 0. The limb on the other side copies all values from its mirror, but negates all x values. After each pair of limbs is generated, the creature has a random chance to switch from generating legs to generating arms. Each joint is rendered as a sphere, and each sphere is connected by a capped cylinder, whose start and end radii are the same as the joint radii it is connected to.  Each capped cylinder begins oriented along the y-axis, and is rotated using rotation matrices that are computed CPU side and passed to the ray-marcher shader.  These rotation matrices are computed using quaternions as implemented by the glMatrix library in WebGL.  The quaternion used represents a rotation from a perfectly vertical vector (0,1,0) to the vector that represents the direction between two joints, and this quaternion is then converted to a mat4.  
+First, we randomize or read from user input the number of pairs of limbs.  Each limb is generated starting from a metaball position on the spine.  Limbs are initally distributed uniformly accross the torso metaballs, but are then randomly offset within their buckets. Generation begins starting from the back of the creature, creating legs. The individual limbs are generated choosing a random number of joints and assigning joint positions by randomizing a spherical change in position from the previous joint. If the joint is a leg, its final joint will always be at y = 0. The limb on the other side copies all values from its mirror, but negates all x values. After each pair of limbs is generated, the creature has a random chance to switch from generating legs to generating arms. 
+
+Each joint is rendered as a sphere, and each sphere is connected by a capped cylinder, whose start and end radii are the same as the joint radii it is connected to.  Each capped cylinder begins oriented along the y-axis, and is rotated using rotation matrices that are computed CPU side and passed to the ray-marcher shader.  These rotation matrices are computed using quaternions as implemented by the glMatrix library in WebGL.  The quaternion used represents a rotation from a perfectly vertical vector (0,1,0) to the vector that represents the direction between two joints, and this quaternion is then converted to a mat4.  
+
+> APPENDAGES
 
 Hands and Feet are hard coded SDFs that are placed at the position of the final joint in each limb.  Their size is based on the radii of the final joint in the respective limb.  Each foot is rotated slightly off from the x-axis on either side.  Each hand is rotated based on the final limb rotation in each limb.  Integers acting as boolean values are passed into the shader to determine whether a limb will generate a hand or a foot at the end (0 for foot, 1 for hand).
 
@@ -28,7 +32,7 @@ The creature generator selects 2 grayscale surface textures and generates 4 rand
 
 > ISSUES
 
-Infrequently, a raymarching error occurs where a primitive is smoothed too intensely resulting in comprehensible geometry.  Due to the infrequent nature of this bug, debugging of this issue has proven difficult.  
+Infrequently, a raymarching error occurs where a primitive is smoothed too intensely resulting in incomprehensible geometry.  Due to the infrequent and seemingly random nature of this bug, debugging of this issue has proven difficult.  
 
 Occasionally, limbs clearly collide with one another. A fix for this would require a complex bounding-box system in our creature generation function.
 
