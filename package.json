@@ -8,9 +8,9 @@
     "@types/webgl2": "0.0.2",
     "@types/dat-gui": "^0.6.3",
     "@types/gl-matrix": "^2.4.0",
-    "ts-loader": "^3.2.0",
+    "ts-loader": "^9.4.2",
     "typescript": "^2.6.2",
-    "webpack": "^3.10.0",
+    "webpack": "^5.75.0",
     "webpack-dev-server": "^2.10.1",
     "webpack-glsl-loader": "^1.0.1"
   },
